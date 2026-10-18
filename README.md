@@ -4,6 +4,19 @@ A local video editor for combining flight tracks with videos, photos and audio. 
 
 The interface supports English and German, with light and dark themes.
 
+## Download and install / Herunterladen und installieren
+
+**[Download FlightStudio for Windows](https://github.com/adorres1/FlightStudio/releases/latest)**
+
+- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.3.0.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
+- **Portable:** Download `FlightStudio-V2-Portable-2.3.0.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
+- Windows 10/11, 64-bit. No ChatGPT account, GitHub account, Node.js installation or command line is needed. Internet access is needed for online map layers.
+- The executable is currently unsigned. Windows or an organization's application-control policy may block it. Do not disable security protections to run it.
+
+**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.3.0.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
+
+First steps: import an IGC flight, import videos/photos, review timestamp alignment, edit on the timeline, then export. Save the project before closing or updating. Imported files and exports stay on your computer.
+
 ## Features
 
 - Live preview and a multitrack timeline: move, trim, split, duplicate and delete clips.
@@ -47,7 +60,7 @@ The installer and portable executable are generated under `release/desktop-2.3.0
 
 Builds are unsigned unless the distributor configures code signing. Windows application-control policies can block unsigned builds. No security settings are changed by the application.
 
-This repository contains source code, not prebuilt applications or bundled runtime binaries. Building or installing dependencies downloads third-party components.
+This repository contains the source code. Prebuilt Windows applications are attached to [GitHub Releases](https://github.com/adorres1/FlightStudio/releases). Building or installing dependencies downloads third-party components.
 
 ## Editing
 
