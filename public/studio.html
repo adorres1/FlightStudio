@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FlightStudio V2 · Schnittwerkstatt</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
+    <link rel="stylesheet" href="/studio.css" />
+    <script type="importmap">
+      { "imports": { "luxon": "/vendor/luxon.js" } }
+    </script>
+    <script>
+      window.CESIUM_BASE_URL = "/cesium/";
+    </script>
+    <script defer src="/cesium/Cesium.js"></script>
+    <script type="module" src="/studio.mjs"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"
+        ><b>↗</b><span>FLIGHTSTUDIO <small>V2</small></span></a
+      >
+      <div class="project-title">
+        <input
+          id="project-name"
+          aria-label="Projektname"
+          value="Mein Flugfilm"
+        /><span id="save-state">Lokal auf deinem Laptop</span>
+      </div>
+      <div class="top-actions">
+        <button id="gallery-media" aria-controls="library" aria-expanded="true" class="active">Medien</button>
+        <button id="gallery-flights" aria-controls="library" aria-expanded="false">Flüge</button>
+        <button id="panel-clip" aria-controls="inspector" aria-expanded="false">Clip</button>
+        <button id="panel-camera" aria-controls="inspector" aria-expanded="false">Flugkarte & Kamera</button>
+        <button id="panel-project" aria-controls="inspector" aria-expanded="false">Projekt-Einstellungen</button>
+        <select id="language" aria-label="Sprache / Language"><option value="de">Deutsch</option><option value="en">English</option></select>
+        <select id="theme" aria-label="Erscheinungsbild"><option value="light">☀ Hell</option><option value="dark">☾ Dunkel</option></select>
+        <button id="new-project">Neu</button
+        ><button id="open-project">Öffnen</button
+        ><button id="save-project">Projekt sichern</button
+        ><button id="help" class="icon" aria-label="Hilfe">?</button
+        ><button id="export-open" class="primary">Exportieren ↗</button>
+      </div>
+    </header>
+    <main class="studio">
+      <aside class="library" id="library">
+        <div class="section-heading gallery-heading"><h2 id="gallery-title">Mediathek</h2><button id="gallery-close" class="icon" aria-label="Galerie schliessen">×</button></div>
+        <section id="media-gallery">
+        <div class="section-heading">
+          <h2>Mediathek <span id="asset-count">0</span></h2>
+          <button id="import-media" class="primary small">
+            ＋ Importieren
+          </button>
+        </div>
+        <div class="library-tabs">
+          <button data-filter="all" class="active">Alle</button
+          ><button data-filter="video">Videos</button
+          ><button data-filter="photo">Fotos</button
+          ><button data-filter="audio">Audio</button>
+        </div>
+        <input
+          id="media-search"
+          type="search"
+          placeholder="Material durchsuchen …"
+          aria-label="Material durchsuchen"
+        /><label class="check"
+          ><input id="auto-insert" type="checkbox" checked /> Beim Import in
+          Timeline einsetzen</label
+        >
+        <div id="asset-grid" class="asset-grid"></div>
+        </section>
+        <section id="flight-gallery" hidden>
+        <div class="library-footer">
+          <button id="import-flight">⌁ Flugdateien hinzufügen</button
+          ><button id="demo">Demoflug</button>
+          <p id="flight-info">IGC · KML · KMZ – auch später ergänzen</p>
+          <button id="export-kml" hidden>Flug als KML sichern ↓</button>
+          <details id="flight-collection" open hidden>
+            <summary>Flüge in dieser Karte <span id="flight-count">0</span></summary>
+            <p class="hint">
+              Der Hauptflug bestimmt die Zeit der Karte. Weitere Spuren liegen
+              in derselben Ansicht.
+            </p>
+            <div id="flight-overlays"></div>
+            <button id="replace-flight">Hauptflug ersetzen …</button>
+          </details>
+        </div>
+        </section>
+        <div id="source-preview" hidden>
+          <div class="section-heading">
+            <h3 id="source-name" translate="no"></h3>
+            <button
+              id="source-close"
+              class="icon"
+              aria-label="Quellvorschau schliessen"
+            >
+              ×
+            </button>
+          </div>
+          <video id="source-video" controls playsinline></video
+          ><img id="source-photo" alt="Quellfoto" /><audio
+            id="source-audio"
+            controls
+          ></audio
+          ><button id="insert-source" class="primary">
+            An Abspielposition einsetzen ＋
+          </button>
+        </div>
+      </aside>
+      <section class="viewer">
+        <div class="viewer-heading">
+          <div>
+            <span class="eyebrow">PROGRAMMVORSCHAU</span
+            ><span id="selection-summary" translate="no"
+              >Alles beginnt mit deinem Material.</span
+            >
+          </div>
+          <div class="viewer-tools">
+            <select id="aspect" aria-label="Bildformat">
+              <option value="16:9">16:9 · Querformat</option>
+              <option value="9:16">9:16 · Hochformat</option>
+              <option value="1:1">1:1 · Quadrat</option></select
+            >
+            <label class="interaction-switch" id="interaction-switch">
+              <input type="checkbox" id="map-mouse" role="switch" aria-label="Karte drehen" aria-describedby="interaction-labels">
+              <span class="switch-options" id="interaction-labels"><span>Fensterposition</span><span>Karte drehen</span></span>
+            </label>
+          </div>
+        </div>
+        <p id="mouse-hint" class="hint" hidden>Ziehen: drehen/neigen · Rechtsziehen oder Umschalt + Ziehen: verschieben · Mausrad: zoomen</p>
+        <div class="preview-well">
+          <div id="stage">
+            <canvas
+              id="preview"
+              width="1280"
+              height="720"
+              aria-label="Live-Vorschau des fertigen Films"
+            ></canvas>
+            <div id="handles"></div>
+            <div id="empty-stage">
+              <span>↗</span>
+              <h1>Deine Bilder. Dein Flug. Dein Film.</h1>
+              <p>
+                Videos, Fotos oder Musik importieren.<br />Eine Flugspur kannst
+                du jederzeit ergänzen.
+              </p>
+              <button id="empty-import" class="primary">
+                Material auswählen</button
+              ><button id="demo-project">Demoflug</button>
+            </div>
+          </div>
+        </div>
+        <div class="viewer-bottom">
+          <div class="layout-controls">
+            <span>Projektlayout</span
+            ><select id="layout" aria-label="Projektlayout">
+              <option value="auto">Automatisch · mehrere Kameras</option>
+              <option value="single">Vollbild · Spuren übereinander</option>
+              <option value="pip">Video gross · Bild im Bild</option>
+              <option value="map-main">Flug gross · Videos im Bild</option>
+              <option value="grid">Raster / nebeneinander</option>
+              <option value="stack">Untereinander</option></select
+            ><button id="reset-layout">Zurücksetzen</button>
+          </div>
+          <span id="auto-speed-status"></span><span id="terrain-status"></span>
+        </div>
+        <div class="transport">
+          <div>
+            <button id="undo" aria-label="Rückgängig">↶</button
+            ><button id="redo" aria-label="Wiederholen">↷</button>
+          </div>
+          <div class="playback">
+            <button id="previous" aria-label="Ein Bild zurück">‹|</button
+            ><button id="play" class="play" aria-label="Abspielen">▶</button
+            ><button id="next" aria-label="Ein Bild vor">|›</button
+            ><span id="clock">00:00.00 / 00:00.00</span>
+          </div>
+          <label
+            >Vorschau
+            <select id="play-speed">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="5">5×</option>
+              <option value="10">10×</option>
+            </select></label
+          >
+        </div>
+      </section>
+      <aside class="inspector" id="inspector" hidden>
+        <div class="section-heading">
+          <h2 id="panel-title">Eigenschaften</h2>
+          <span id="inspector-kind">PROJEKT</span>
+          <button id="panel-close" class="icon" aria-label="Seitenleiste schliessen">×</button>
+        </div>
+        <div id="inspector-content"></div>
+        <details id="camera-panel" class="map-settings" open hidden>
+          <summary>Flugkarte & Kamera</summary>
+          <label
+            >Standard-Kartenstil<select id="map-style">
+              <option value="satellite">Satellit · 3D</option>
+              <option value="osm">Strassenkarte · 3D</option>
+              <option value="relief">Schwarzweiss · Relief</option>
+              <option value="overlay">Transparent · Relief-Overlay</option>
+            </select></label
+          ><label
+            >Relief-Deckkraft<input
+              id="relief-opacity"
+              type="range"
+              min="0"
+              max="100"
+              value="65" /></label
+          ><label
+            >Kamera<select id="camera-mode">
+              <option value="follow">Flug folgen</option>
+              <option value="fixed">Fester Blickwinkel</option>
+              <option value="path">Gespeicherte Kamerafahrt</option>
+            </select></label
+          ><button id="frame-flight">Gesamten Flug zeigen ↗</button
+          ><label
+            >Richtung <output id="heading-label">17°</output
+            ><input
+              id="camera-heading"
+              type="range"
+              min="0"
+              max="360"
+              value="17" /></label
+          ><label
+            >Neigung <output id="pitch-label">37°</output
+            ><input
+              id="camera-pitch"
+              type="range"
+              min="5"
+              max="89"
+              value="37" /></label
+          ><label
+            >Abstand <output id="range-label">4000 m</output
+            ><input
+              id="camera-range"
+              type="range"
+              min="100"
+              max="200000"
+              step="50"
+              value="4000" /></label
+          ><label
+            >Übergang zum nächsten Blick (s)<input
+              id="camera-duration"
+              type="number"
+              min="0"
+              max="3600"
+              step=".5"
+              value="5" /></label
+          ><button id="camera-add">＋ Blickwinkel hier speichern</button>
+          <div id="camera-list"></div>
+          <p class="hint">
+            Erster Punkt: Ausgangsblick. Danach neue Position und Blickrichtung
+            wählen. Der Übergang beginnt am neuen Punkt.
+          </p>
+        </details>
+        <details id="project-panel" open hidden>
+          <summary>Projekt-Einstellungen</summary>
+          <label>Projektname<input id="project-name-settings" type="text"></label>
+          <p class="hint">
+            Die optionale Flug-Beschleunigung findest du über der Timeline. Die
+            Filmzeit zeigt die verkürzten Abschnitte. Über der Timeline kannst
+            du zur unbeschleunigten Schnittzeit wechseln. Manuell gesetztes
+            Clip-Tempo hat Vorrang.
+          </p>
+          <label
+            >Zeitzone der Aufnahmen<select id="timezone">
+              <option value="Europe/Zurich">Schweiz · Zürich</option>
+              <option value="Europe/Lisbon">Portugal · Lissabon</option>
+              <option value="UTC">UTC</option>
+              <option value="Europe/Berlin">Deutschland · Berlin</option>
+              <option value="Europe/London">Grossbritannien · London</option>
+              <option value="America/Los_Angeles">USA · Los Angeles</option>
+            </select></label
+          ><label
+            >Hintergrundfarbe<input
+              id="background"
+              type="color"
+              value="#17252a"
+          /></label>
+          <p class="hint">
+            IGC-Zeiten sind UTC. Die Zeitzone gilt für Aufnahmen ohne eindeutige
+            Zeitzonenangabe.
+          </p>
+        </details>
+      </aside>
+      <section class="timeline-panel">
+        <div id="timeline-resizer" title="Timeline-Höhe ändern"></div>
+        <div class="speed-toolbar">
+          <label class="check"
+            ><input id="gap-auto" type="checkbox" /> Flug ohne Video/Foto
+            beschleunigen</label
+          >
+          <label
+            >Tempo
+            <input
+              id="gap-speed"
+              aria-label="Automatisches Tempo"
+              type="number"
+              min="1"
+              max="200"
+              value="50"
+            />×</label
+          >
+          <button id="gap-50">50× einschalten</button>
+          <span id="gap-description"
+            >Aus · alle Abschnitte in ihrem eingestellten Tempo</span
+          >
+        </div>
+        <div class="timeline-toolbar">
+          <div class="edit-tools">
+            <button id="add-track">＋ Spur</button
+            ><button id="add-title">T Titel</button><i></i
+            ><button id="split">✂ Teilen <kbd>S</kbd></button
+            ><button id="duplicate">Duplizieren</button
+            ><button id="delete">Entfernen</button
+            ><button id="snap" class="active" aria-pressed="true">
+              ⌁ Einrasten
+            </button>
+          </div>
+          <div class="zoom">
+            <select id="timeline-mode" aria-label="Zeitanzeige">
+              <option value="film">Filmzeit</option>
+              <option value="edit">Schnittzeit ohne Automatik</option></select
+            ><button id="zoom-fit">Einpassen</button
+            ><label
+              >−
+              <input
+                id="zoom"
+                type="range"
+                min="-1"
+                max="4"
+                step=".05"
+                value="0"
+              />
+              ＋</label
+            >
+          </div>
+        </div>
+        <div class="range-toolbar">
+          <span>BEREICH</span
+          ><label
+            >Von
+            <input id="range-start" type="number" min="0" step=".1" value="0" />
+            s</label
+          ><button id="mark-start" title="Anfang an der Abspielposition">
+            I</button
+          ><label
+            >bis
+            <input id="range-end" type="number" min="0" step=".1" value="0" />
+            s</label
+          ><button id="mark-end" title="Ende an der Abspielposition">O</button
+          ><button id="range-all">Alles</button
+          ><select id="edit-scope" aria-label="Schnittbereich anwenden auf">
+            <option value="all">Alle Spuren · Zeit schliessen</option>
+            <option value="selected">
+              Gewählte Clips · Lücke lassen
+            </option></select
+          ><button id="cut-range">Bereich löschen</button
+          ><select id="range-speed" aria-label="Tempo für Bereich">
+            <option value=".5">0.5×</option>
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+            <option value="5">5×</option>
+            <option value="10" selected>10×</option>
+            <option value="20">20×</option>
+            <option value="50">50×</option>
+            <option value="100">100×</option>
+            <option value="150">150×</option>
+            <option value="200">200×</option></select
+          ><button id="speed-range">Tempo anwenden</button>
+        </div>
+        <div class="timeline-body">
+          <div class="track-sidebar">
+            <div class="track-label-head">SPUREN</div>
+            <div id="track-labels"></div>
+          </div>
+          <div id="timeline-scroll">
+            <div id="timeline-content">
+              <div id="ruler" aria-label="Timeline-Zeitlineal"></div>
+              <div id="lanes"></div>
+              <div id="range-shade"></div>
+              <div id="playhead"><span></span></div>
+            </div>
+          </div>
+        </div>
+        <footer class="timeline-footer">
+          <span id="timeline-hint"
+            >Clips ziehen zum Verschieben · Ränder ziehen zum Kürzen · Strg für
+            Mehrfachauswahl</span
+          ><span id="duration-label">30 fps</span>
+        </footer>
+      </section>
+    </main>
+    <div
+      id="map-source"
+      style="
+        position: fixed;
+        left: -10000px;
+        top: 0;
+        width: 640px;
+        height: 360px;
+        pointer-events: none;
+      "
+    ></div>
+    <div id="map-credits"></div>
+    <input
+      type="file"
+      id="media-input"
+      accept="video/*,audio/*,.jpg,.jpeg,.png,.webp,.avif"
+      multiple
+      hidden
+    /><input
+      type="file"
+      id="flight-input"
+      accept=".igc,.kml,.kmz"
+      multiple
+      hidden
+    /><input
+      type="file"
+      id="project-input"
+      accept=".flightstudio,.json"
+      hidden
+    />
+    <dialog id="export-dialog">
+      <div class="dialog-heading">
+        <div>
+          <span class="eyebrow">DEIN FILM ZUM MITNEHMEN</span>
+          <h2>Film exportieren</h2>
+        </div>
+        <button id="export-close" class="icon" aria-label="Export schliessen">
+          ×
+        </button>
+      </div>
+      <p id="export-summary"></p>
+      <div class="two-fields">
+        <label
+          >Format<select id="export-format">
+            <option value="mp4">MP4 · H.264</option>
+            <option value="webm">WebM</option>
+          </select></label
+        ><label
+          >Auflösung<select id="export-size">
+            <option value="720">HD · 720p</option>
+              <option value="1080" selected>Full HD · 1080p</option>
+              <option value="1440">QHD · 1440p</option>
+              <option value="2160">4K UHD · 2160p</option>
+          </select></label
+        >
+      </div>
+      <div class="two-fields">
+        <label>Bildrate<select id="export-fps"><option value="24">24 fps</option><option value="25">25 fps</option><option value="30" selected>30 fps</option><option value="50">50 fps</option><option value="60">60 fps</option></select></label>
+        <label>Qualität<select id="export-quality"><option value="compact">Kleine Datei</option><option value="standard" selected>Ausgewogen</option><option value="high">Hohe Qualität</option></select></label>
+      </div>
+      <p id="export-specs" class="hint"></p>
+      <label class="check"
+        ><input id="export-audio" type="checkbox" checked /> Ton aller aktiven,
+        nicht stummgeschalteten Spuren</label
+      >
+      <p class="hint" id="export-hint"></p>
+      <progress id="export-progress" max="1" value="0" hidden></progress>
+      <p id="export-status" role="status"></p>
+      <video id="export-result" controls playsinline hidden></video>
+      <div class="dialog-actions">
+        <button id="export-cancel" hidden>Abbrechen</button
+        ><button id="export-start" class="primary">Export starten ↗</button
+        ><a id="export-download" class="button primary" hidden
+          >Video speichern ↓</a
+        >
+      </div>
+      <div
+        id="export-history"
+        class="export-history"
+        aria-label="Bisherige Exporte"
+      ></div>
+    </dialog>
+    <dialog id="help-dialog">
+      <div class="dialog-heading">
+        <h2>Willkommen in der Schnittwerkstatt</h2>
+        <button id="help-close" class="icon" aria-label="Hilfe schliessen">
+          ×
+        </button>
+      </div>
+      <ol>
+        <li>
+          <b>Material importieren.</b> Passende Aufnahmezeiten werden mit der
+          Flugspur abgeglichen. Gleichzeitige Clips erhalten getrennte Spuren.
+          Ohne passende Zeit landet der Clip an der Abspielposition.
+        </li>
+        <li>
+          <b>Timeline bearbeiten.</b> Clips ziehen, an beiden Rändern kürzen und
+          mit S teilen. Strg-Klick wählt mehrere Clips. Spuren lassen sich
+          stummschalten, ausblenden und sperren.
+        </li>
+        <li>
+          <b>Bild gestalten.</b> Das automatische Layout zeigt parallele Kameras
+          nebeneinander. In der Vorschau Fenster greifen und verschieben; an der
+          Ecke skalieren. Rechts stehen genaue Werte.
+        </li>
+        <li>
+          <b>Flug verbinden.</b> IGC/KML/KMZ braucht Zeitstempel. Die Flugspur
+          lässt sich teilen, verschieben und beschleunigen. „Alle Spuren“
+          schliesst Schnitte gemeinsam; „Gewählte Clips“ lässt die übrigen
+          Spuren weiterlaufen.
+        </li>
+        <li>
+          <b>Relief gestalten.</b> „Transparent · Relief-Overlay“ zeigt
+          Geländestrukturen und Höhenlinien über dem Bild. Das Relief braucht
+          Online-Geländedaten. Die Flugroute bleibt sichtbar.
+        </li>
+        <li>
+          <b>Sichern.</b> Eine Projektdatei enthält Bearbeitung und Flugspur,
+          keine Originalmedien. Für einen anderen Laptop die Originalmedien
+          ebenfalls kopieren und dort importieren.
+        </li>
+      </ol>
+      <p>
+        Leertaste: Play/Pause · S: Teilen · Entf: Entfernen · Strg+D:
+        Duplizieren · Strg+Z/Y: Rückgängig/Wiederholen · I/O: Bereich setzen ·
+        Pfeile: Einzelbild.
+      </p>
+      <p>
+        V2 ist eine eigene Anwendung. V1-Projekte lassen sich importieren.
+        Fehlendes Originalmaterial vorher in V2 importieren. Insta360-Exporte
+        können falsche Aufnahmezeiten haben: im Clip-Inspektor korrigieren oder
+        auf der Timeline zuordnen.
+      </p>
+      <p>
+          Dateien bleiben lokal. Die Desktop-App speichert sie unter AppData;
+          die Browser-Ausgabe im Programmordner. OneDrive kann verwaltete Ordner
+          synchronisieren. Kartenanbieter erhalten Kartenanfragen.
+      </p>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+    <div id="busy" hidden>
+      <div>
+        <span class="spinner"></span
+        ><strong id="busy-text">Material wird vorbereitet …</strong>
+      </div>
+    </div>
+  </body>
+</html>

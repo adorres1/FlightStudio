@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {convertV1} from '../public/migrate-v1.mjs';
+import {validateProject} from '../lib/timeline.mjs';
+const factory=()=>({version:2,assets:[],gaps:{enabled:true,speed:50},map:{frames:[],heading:0},zone:'Europe/Zurich'});
+const start=Date.UTC(2026,8,12,10,10);
+const old=()=>({version:1,flight:{start,end:start+600000},segments:[{start,end:start+60000,rate:1},{start:start+120000,end:start+600000,rate:10}],media:[],cameraFrames:[{anchor:start+150000,duration:2,pose:{lon:7,lat:46}}],followPose:{range:4500},time:20,showStats:false});
+test('V1 import preserves flight edits, camera anchors and existing playback speed',()=>{const input=old(),before=JSON.stringify(input),p=convertV1(input,[],factory);assert.equal(JSON.stringify(input),before);assert.equal(p.gaps.enabled,false);assert.equal(p.clips[1].start,60);assert.equal(p.clips[1].rate,10);assert.equal(p.map.frames[0].time,63000);assert.equal(p.map.range,4500);assert.equal(p.clips[0].showStats,false);assert.equal(p.playhead,20);validateProject(p);});
+test('V1 media remaps to the locally imported file and keeps trim/source alignment',()=>{const input=old();input.media=[{id:'original',name:'Camera.mp4',type:'video',duration:30,trimIn:2,trimOut:22,manualTime:start+130000}];const p=convertV1(input,[{id:'local',name:'Camera.mp4',type:'video',duration:30}],factory);const c=p.clips.find(c=>c.kind==='video');assert.equal(c.assetId,'local');assert.equal(c.in,2);assert.equal(c.out,22);assert.equal(c.start,61.2);assert.equal(c.rate,10);validateProject(p);});
+test('V1 import reports missing originals before silently dropping their clips',()=>{const input=old();input.media=[{id:'missing',name:'Missing.mp4'}];assert.throws(()=>convertV1(input,[],factory),/Missing.mp4/);});

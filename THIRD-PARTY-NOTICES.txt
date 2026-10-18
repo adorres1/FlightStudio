@@ -1,0 +1,36 @@
+FlightStudio includes third-party components with their own licenses.
+The application source license does not replace these licenses.
+
+CesiumJS: Apache-2.0. https://github.com/CesiumGS/cesium
+Luxon: MIT. https://github.com/moment/luxon
+exifr: MIT. https://github.com/MikeKovarik/exifr
+fast-xml-parser: MIT. https://github.com/NaturalIntelligence/fast-xml-parser
+fflate: MIT. https://github.com/101arrowz/fflate
+Busboy: MIT. https://github.com/mscdex/busboy
+Node.js runtime: MIT and bundled dependency licenses. https://nodejs.org/
+
+FFmpeg and FFprobe binaries are distributed by ffmpeg-static / ffprobe-static.
+Their actual build configuration and GPL notices can be inspected with:
+  node_modules\ffmpeg-static\ffmpeg.exe -version
+  node_modules\ffmpeg-static\ffmpeg.exe -L
+  node_modules\ffprobe-static\bin\win32\x64\ffprobe.exe -version
+These builds may include GPL components such as libx264. The binary-specific
+licenses and source availability obligations remain applicable when sharing
+a portable build. Preserve the included license files. Before distributing
+the bundled binaries publicly, supply the matching source code / required
+source offer for the precise upstream builds under their respective licenses.
+FFmpeg source: https://ffmpeg.org/download.html
+Binary build/source projects:
+  https://github.com/eugeneware/ffmpeg-static
+  https://github.com/descriptinc/ffmpeg-ffprobe-static
+  https://github.com/joshwnj/ffprobe-static
+
+Online imagery and elevation have separate provider terms and attribution
+requirements. Credits remain visible in the editor and exported videos.
+Imagery: Esri, Maxar, Earthstar Geographics, GIS User Community.
+Elevation: Esri WorldElevation3D.
+Alternative map: OpenStreetMap contributors (https://www.openstreetmap.org/copyright).
+
+Electron: MIT, with bundled Chromium, Node.js and third-party licenses.
+https://github.com/electron/electron
+The desktop distribution includes LICENSE.electron.txt and LICENSES.chromium.html.
