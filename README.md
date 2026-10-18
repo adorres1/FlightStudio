@@ -43,7 +43,7 @@ On Windows, `START-FlightStudio-V2.cmd` starts the browser edition and `STOP-Fli
 npm run build:desktop
 ```
 
-The installer and portable executable are generated under `release/desktop-2.2.0`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
+The installer and portable executable are generated under `release/desktop-2.3.0`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
 
 Builds are unsigned unless the distributor configures code signing. Windows application-control policies can block unsigned builds. No security settings are changed by the application.
 
@@ -86,3 +86,13 @@ The pretest step generates synthetic videos, a photo and two IGC fixtures into t
 The application source is licensed under MIT. Dependencies keep their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
 
 3D rendering uses CesiumJS. Online imagery and terrain currently come from Esri, with an OpenStreetMap street-map option. Data-provider terms, attribution requirements and service limits apply separately from the application's MIT license. Publicly reachable map endpoints do not imply unrestricted usage or redistribution rights.
+
+## Editing improvements in 2.3
+
+- Shotcut-inspired clip controls: 0–200% volume with percent and dB readouts, mute, and independent audio/video fades. Drag the fade handles or volume line directly on a timeline clip.
+- Dissolve and wipe transitions between overlapping clips on one track. Applying a transition moves the incoming clip; other tracks keep their timing. The two sources share one layout tile during the transition.
+- Mouse wheel over the timeline zooms at the pointer. Shift+wheel scrolls horizontally; Alt+wheel scrolls tracks. F fits selected clips; Shift+F fits the whole timeline.
+- N toggles snapping; hold Alt while dragging to suspend snapping.
+- Give the main flight a display name in the flight gallery. Toggle a name tag at the marker for each flight.
+- Zoom image content with the wheel over its preview; Alt+drag pans within the frame. Frames can extend off-canvas and scale up to 500%. Reset frame position & zoom returns a clip to its automatic layout.
+- Clip effects, name tags and transitions are saved with the project and used by both preview and export.

@@ -7,13 +7,14 @@ import {fileURLToPath} from 'node:url';
 import ffmpeg from 'ffmpeg-static';
 import ffprobe from 'ffprobe-static';
 const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-test('Local server: imports, timestamps, byte ranges, access protection and MP4 conversion',{timeout:120000},async t=>{
+test('Local server: imports, timestamps, byte ranges, access protection and MP4 conversion',{timeout:180000},async t=>{
   await fs.mkdir(path.join(root,'data'),{recursive:true});
   const data=await fs.mkdtemp(path.join(root,'data','qa-')),port=4280+Math.floor(Math.random()*100),base=`http://127.0.0.1:${port}`;
   const child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:String(port),FLIGHTSTUDIO_DATA_DIR:data},windowsHide:true,stdio:'pipe'});let logs='';child.stderr.on('data',d=>logs+=d);t.after(()=>child.kill());
   let status;for(let i=0;i<80;i++){try{status=await fetch(base+'/api/status').then(r=>r.json());break;}catch{await new Promise(r=>setTimeout(r,80));}}assert.equal(status?.app,'FlightStudioV2',logs);
   const call=async(route,options={})=>{const response=await fetch(base+route,{...options,headers:{'X-FlightStudio-Token':status.token,...options.headers}});const payload=await response.json();assert.ok(response.ok,JSON.stringify(payload));return payload;};
   assert.match(await fetch(base+'/').then(r=>r.text()),/studio\.mjs/);
+  assert.equal((await fetch(base+'/lib/clip-effects.mjs')).status,200);
   assert.equal((await fetch(base+'/examples/Demo-Video-B.mp4',{method:'HEAD'})).status,200);
   const upload=async(route,name)=>{const form=new FormData();form.append('file',new Blob([await fs.readFile(path.join(root,'examples',name))]),name);return call(route,{method:'POST',body:form});};
   assert.equal((await fetch(base+'/api/exports',{method:'POST'})).status,403);
@@ -54,6 +55,27 @@ test('Local server: imports, timestamps, byte ranges, access protection and MP4 
     assert.equal(exact.streams[0].nb_frames,'30');
     assert.equal(Number(exact.format.duration),.5);
     assert.ok(exact.streams.some(s=>s.codec_type==='audio'));
+
+    // Export actual frames through the same compositor as the live preview.
+    // Pure red/blue sources reveal accidental layout splits or dark dissolves.
+    const colors=[];
+    for(const color of ['red','blue']){
+      const image=path.join(data,color+'.png');
+      execFileSync(ffmpeg,['-y','-v','error','-f','lavfi','-i','color=c='+color+':s=128x72','-frames:v','1',image],{windowsHide:true});
+      const form=new FormData();form.append('file',new Blob([await fs.readFile(image)]),color+'.png');
+      colors.push(await call('/api/media',{method:'POST',body:form}));
+    }
+    const scene={version:2,name:'Synthetic transition test',assets:colors,flight:null,tracks:[{id:'v',visible:true}],layout:'auto',gaps:{enabled:false},clips:colors.map((a,i)=>({id:'color'+i,assetId:a.id,kind:'photo',trackId:'v',start:i,in:0,out:2,rate:1,transitionIn:i?{fromId:'color0',type:'dissolve'}:null}))};
+    const pixel=(file,x)=>[...execFileSync(ffmpeg,['-v','error','-i',file,'-vf','format=rgb24,crop=1:1:'+x+':360','-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','pipe:1'],{windowsHide:true})];
+    for(const type of ['dissolve','wipe']){
+      scene.clips[1].transitionIn.type=type;
+      const job=await call('/api/exports',{method:'POST',body:JSON.stringify({format:'mp4',size:720,fps:30,quality:'high',audio:false,range:[1.5,1.5+1/30],project:scene})});
+      let done;for(let i=0;i<400;i++){done=await call('/api/exports/'+job.id);if(['done','failed'].includes(done.status))break;await new Promise(r=>setTimeout(r,150));}
+      assert.equal(done.status,'done',done.error);
+      const file=path.join(data,'exports',job.id+'.mp4'),left=pixel(file,320),right=pixel(file,960);
+      if(type==='dissolve')for(const p of [left,right]){assert.ok(p[0]>110&&p[0]<145,JSON.stringify(p));assert.ok(p[2]>110&&p[2]<145,JSON.stringify(p));assert.ok(p[1]<15,JSON.stringify(p));}
+      else {assert.ok(left[2]>230&&left[0]<15,JSON.stringify(left));assert.ok(right[0]>230&&right[2]<15,JSON.stringify(right));}
+    }
 
   }
 });

@@ -1,7 +1,8 @@
 import { DateTime } from "luxon";
 import { parseCaptureTime } from "/lib/time.mjs";
 import { finalizeFlight, toKML } from "/lib/flight.mjs";
-import { makeOverlay, readoutRect } from "/lib/flight-overlays.mjs";
+import { makeOverlay, readoutRect, flightName } from "/lib/flight-overlays.mjs";
+import { effectScene, transitionFor, applyTransition, connectOverlap, imageTransform } from '/lib/clip-effects.mjs';
 import { convertV1 } from "./migrate-v1.mjs";
 import { validateCameraFrame } from "/lib/camera.mjs";
 import {
@@ -28,6 +29,7 @@ import {
   advancePlayback,
   clipMapSettings,
 } from "/lib/timeline.mjs";
+import { renderClipEffects } from "./clip-inspector-effects.mjs";
 import { FlightMap } from "./map-v2.mjs";
 import { MediaEngine } from "./media-engine.mjs";
 import { drawFrame } from "./compositor.mjs";
@@ -231,7 +233,7 @@ const duration = () => sequenceDuration(S.clips),
   trackFor = (c) => S.tracks.find((t) => t.id === c.trackId),
   clipName = (c) =>
     c.kind === "flight"
-      ? S.flight?.name || "Flug"
+      ? flightName(S.flight)
       : c.kind === "title"
         ? c.text || "Titel"
         : assetFor(c)?.name || "Fehlendes Medium";
@@ -471,40 +473,6 @@ async function importFlight(file, replace = false) {
     busy(false);
   }
 }
-function visibleLayers() {
-  const tracks = new Map(S.tracks.map((t, i) => [t.id, { ...t, index: i }]));
-  const actives = S.clips.filter(
-    (c) =>
-      active(c, app.time) &&
-      tracks.get(c.trackId)?.visible &&
-      c.kind !== "audio",
-  );
-  const highest = new Map();
-  for (const c of actives) {
-    const previous = highest.get(c.trackId);
-    if (!previous || previous.start <= c.start) highest.set(c.trackId, c);
-  }
-  const preset = sceneLayout([...highest.values()], S.layout);
-  return [...highest.values()].sort(
-    (a, b) =>
-      (a.kind === "flight"
-        ? preset === "map-main"
-          ? -1000
-          : 1000
-        : a.kind === "title"
-          ? 2000
-          : 0) +
-      tracks.get(a.trackId).index -
-      ((b.kind === "flight"
-        ? preset === "map-main"
-          ? -1000
-          : 1000
-        : b.kind === "title"
-          ? 2000
-          : 0) +
-        tracks.get(b.trackId).index),
-  );
-}
 function renderFlightOverlays() {
   $("flight-count").textContent = S.flight ? 1 + (S.flightOverlays || []).length : 0;
   $("flight-collection").hidden = !S.flight;
@@ -513,11 +481,13 @@ function renderFlightOverlays() {
     host.replaceChildren();
     return;
   }
-  host.innerHTML = `<article class="flight-card">${flightThumbnail(S.flight, "#f28143")}<div class="flight-reference"><span style="color:#f28143">●</span> <strong translate="no">${esc(S.flight.name)}</strong><small>Hauptflug · Zeitgeber</small><small translate="no">${format((S.flight.end - S.flight.start) / 1000)}</small></div></article>`;
+  host.innerHTML = `<article class="flight-card">${flightThumbnail(S.flight, "#f28143")}<div class="flight-reference"><span style="color:#f28143">●</span> <strong translate="no">${esc(flightName(S.flight))}</strong><small>Hauptflug · Zeitgeber</small><small translate="no">${format((S.flight.end - S.flight.start) / 1000)}</small></div><label>Name des Hauptflugs<input id="main-flight-name" type="text" maxlength="100" value="${esc(flightName(S.flight))}"></label><label class="check"><input id="main-name-tag" type="checkbox" ${S.flight.showNameTag ? 'checked' : ''}> Nametag am Flugpunkt</label></article>`;
+  $("main-flight-name").onchange = e => { snapshot(); S.flight.displayName = e.target.value.trim().slice(0, 100) || S.flight.name; changed(); };
+  $("main-name-tag").onchange = e => { snapshot(); S.flight.showNameTag = e.target.checked; changed(); };
   for (const [index, o] of (S.flightOverlays || []).entries()) {
     const row = document.createElement("div");
     row.className = "flight-overlay-row flight-card";
-    row.innerHTML = `${flightThumbnail(o.flight, o.color)}<div class="overlay-heading"><input type="checkbox" aria-label="Flugspur anzeigen" ${o.visible !== false ? "checked" : ""}><input type="color" aria-label="Farbe der Flugspur" value="${esc(o.color)}"><input class="overlay-name" aria-label="Name der Flugspur" value="${esc(o.name || o.flight.name)}"><button class="icon" aria-label="Zusätzliche Flugspur entfernen">×</button></div><small translate="no">${esc(o.flight.name)} · ${format((o.flight.end - o.flight.start) / 1000)}</small><details><summary>Zeitzuordnung</summary><label>Vergleichszeit<select aria-label="Zeitzuordnung der Flugspur"><option value="absolute">Tatsächliche Uhrzeit (UTC)</option><option value="start">Flugstarts gleichzeitig</option></select></label><label>Spur später (+s)<input type="number" aria-label="Zeitversatz der Flugspur" step="1" value="${Number(o.offsetSeconds) || 0}"></label></details>`;
+    row.innerHTML = `${flightThumbnail(o.flight, o.color)}<div class="overlay-heading"><input type="checkbox" aria-label="Flugspur anzeigen" ${o.visible !== false ? "checked" : ""}><input type="color" aria-label="Farbe der Flugspur" value="${esc(o.color)}"><input class="overlay-name" maxlength="100" aria-label="Name der Flugspur" value="${esc(o.name || o.flight.name)}"><button class="icon" aria-label="Zusätzliche Flugspur entfernen">×</button></div><small translate="no">${esc(o.flight.name)} · ${format((o.flight.end - o.flight.start) / 1000)}</small><label class="check"><input class="overlay-name-tag" type="checkbox" ${o.showNameTag !== false ? 'checked' : ''}> Nametag am Flugpunkt</label><details><summary>Zeitzuordnung</summary><label>Vergleichszeit<select aria-label="Zeitzuordnung der Flugspur"><option value="absolute">Tatsächliche Uhrzeit (UTC)</option><option value="start">Flugstarts gleichzeitig</option></select></label><label>Spur später (+s)<input type="number" aria-label="Zeitversatz der Flugspur" step="1" value="${Number(o.offsetSeconds) || 0}"></label></details>`;
     const set = (query, action) =>
       (row.querySelector(query).onchange = (e) => {
         snapshot();
@@ -530,6 +500,7 @@ function renderFlightOverlays() {
     set("input[type=color]", (el) => {
       o.color = el.value;
     });
+    set(".overlay-name-tag", el => { o.showNameTag = el.checked; });
     set(".overlay-name", (el) => {
       o.name = el.value.slice(0, 100);
     });
@@ -562,8 +533,7 @@ function flightThumbnail(flight, color) {
 }
 app.render = () => {
   if (!map) return false;
-  app.layers = visibleLayers();
-  app.rects = layoutRects(app.layers, S.layout);
+  Object.assign(app, effectScene(S.clips, S.tracks, app.time, S.layout));
   const fc = app.layers.find((c) => c.kind === "flight");
   let waiting = false;
   if (fc && S.flight) {
@@ -599,6 +569,7 @@ app.render = () => {
     elements: engine.elements,
     map,
     rects: app.rects,
+    transitions: app.transitions,
     time: app.time,
     flightClip: fc,
     language: renderJob ? S.uiLanguage || "de" : getLanguage(),
@@ -630,6 +601,7 @@ function choose(id, multi = false, reveal = true) {
   handleKey = "";
 }
 function renderSelection() {
+  $("zoom-selection").disabled = !selected.length;
   document
     .querySelectorAll(".clip")
     .forEach((el) =>
@@ -707,6 +679,45 @@ function sourcePreview(a) {
     if (kind === a.type) el.src = a.url;
   }
 }
+function timelineSpan() { return Math.max(10, viewTime(duration()) + Math.min(5, viewTime(duration()) * .03)); }
+function renderRuler() {
+  const scroll = $("timeline-scroll"), steps = [1/30,.1,.25,.5,1,2,5,10,15,30,60,120,300,600,1800,3600];
+  const step = steps.find(v => v * px >= 75) || 3600;
+  const from = Math.max(0, Math.floor((scroll.scrollLeft - 100) / px / step) * step), to = Math.min(timelineSpan(), (scroll.scrollLeft + scroll.clientWidth + 100) / px);
+  $("ruler").replaceChildren();
+  for (let time = from; time <= to; time += step) {
+    const tick = document.createElement('span'); tick.className = 'tick'; tick.style.left = time * px + 'px';
+    tick.textContent = step < 1 ? format(time) : format(time).split('.')[0]; $("ruler").append(tick);
+  }
+}
+function setTimelineZoom(value, anchorX = $("timeline-scroll").clientWidth / 2) {
+  const scroll = $("timeline-scroll"), anchorTime = (scroll.scrollLeft + anchorX) / px;
+  zoom = clamp(value, -1, 14); $("zoom").value = zoom; renderTimeline();
+  scroll.scrollLeft = Math.max(0, anchorTime * px - anchorX); renderRuler();
+}
+function fitSelection() {
+  const clips = chosen(); if (!clips.length) return;
+  const scroll = $("timeline-scroll"), from = Math.min(...clips.map(c => viewTime(c.start))), to = Math.max(...clips.map(c => viewTime(end(c))));
+  const base = Math.max(.02, (scroll.clientWidth - 25) / timelineSpan());
+  setTimelineZoom(Math.log2(scroll.clientWidth * .85 / Math.max(.05, to - from) / base), 0);
+  scroll.scrollLeft = Math.max(0, from * px - scroll.clientWidth * .075); renderRuler();
+}
+function clipEffectsDrag(event, clip, kind) {
+  event.preventDefault(); event.stopPropagation(); choose(clip.id, false, false);
+  if (trackFor(clip)?.locked) return;
+  app.pause(); snapshot(); dragging = true;
+  if (clip.kind !== 'audio' && kind !== 'volume') { clip.audioFadeIn ??= clip.fadeIn || 0; clip.audioFadeOut ??= clip.fadeOut || 0; }
+  const x = event.clientX, y = event.clientY, volume = clip.volume ?? 1;
+  const key = (clip.kind === 'audio' ? 'audioFade' : 'fade') + (kind === 'in' ? 'In' : 'Out'), original = clip[key] || 0;
+  const edge = kind === 'in' ? clip.start : end(clip), view = viewTime(edge);
+  const move = e => {
+    if (kind === 'volume') clip.volume = clamp(volume + (y - e.clientY) / (e.shiftKey ? 500 : 50), 0, 2);
+    else { const delta = editTime(view + (e.clientX - x) / px) - edge; clip[key] = clamp(original + (kind === 'in' ? delta : -delta), 0, length(clip)); }
+    renderTimeline();
+  };
+  const done = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', done); document.removeEventListener('pointercancel', done); dragging = false; changed(); };
+  document.addEventListener('pointermove', move); document.addEventListener('pointerup', done); document.addEventListener('pointercancel', done);
+}
 function renderTimeline() {
   const scroll = $("timeline-scroll"),
     span = Math.max(
@@ -717,18 +728,7 @@ function renderTimeline() {
   px = base * 2 ** zoom;
   const width = Math.max(scroll.clientWidth, span * px);
   $("timeline-content").style.width = width + "px";
-  $("ruler").replaceChildren();
-  const steps = [
-      0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1800, 3600,
-    ],
-    step = steps.find((s) => s * px >= 80) || 3600;
-  for (let t = 0; t <= span; t += step) {
-    const tick = document.createElement("span");
-    tick.className = "tick";
-    tick.style.left = t * px + "px";
-    tick.textContent = format(t).split(".")[0];
-    $("ruler").append(tick);
-  }
+  renderRuler();
   $("lanes").replaceChildren();
   $("track-labels").replaceChildren();
   for (const track of [...S.tracks].reverse()) {
@@ -826,7 +826,7 @@ function renderTimeline() {
     };
     for (const c of S.clips.filter((c) => c.trackId === track.id)) {
       const el = document.createElement("div");
-      el.className = `clip ${c.kind} ${selected.includes(c.id) ? "selected" : ""} ${track.locked ? "locked" : ""}`;
+      el.className = `clip ${c.kind} ${selected.includes(c.id) ? "selected" : ""} ${track.locked ? "locked" : ""} ${c.enabled === false ? "disabled-clip" : ""}`;
       el.dataset.id = c.id;
       el.tabIndex = 0;
       el.setAttribute("role", "button");
@@ -838,6 +838,17 @@ function renderTimeline() {
       el.style.width =
         Math.max(3, (viewTime(end(c)) - viewTime(c.start)) * px) + "px";
       el.innerHTML = `<span class="trim left"></span><span class="clip-name" translate="no">${esc(clipName(c))}</span><span class="clip-info">${c.rate}× · ${format(length(c)).split(".")[0]}${c.auto ? " · Zeitstempel" : ""}</span><span class="trim right"></span>`;
+      if (["video", "audio"].includes(c.kind)) {
+        el.querySelector('.clip-info').append(' · ' + (c.muted ? '0' : Math.round((c.volume ?? 1) * 100)) + '%');
+        const gain = document.createElement('span'); gain.className = 'clip-gain'; gain.title = 'Lautstärke ziehen · Umschalt für Feinabstimmung';
+        gain.onpointerdown = e => clipEffectsDrag(e, c, 'volume'); el.append(gain);
+      }
+      for (const [side, value] of [['in', c.kind === 'audio' ? c.audioFadeIn ?? c.fadeIn : c.fadeIn], ['out', c.kind === 'audio' ? c.audioFadeOut ?? c.fadeOut : c.fadeOut]]) {
+        const band = document.createElement('span'); band.className = 'fade-band ' + side;
+        band.style.width = Math.max(0, (side === 'in' ? viewTime(c.start + (value || 0)) - viewTime(c.start) : viewTime(end(c)) - viewTime(end(c) - (value || 0))) * px) + 'px'; el.append(band);
+        const grip = document.createElement('span'); grip.className = 'fade-grip ' + side; grip.title = side === 'in' ? 'Einblendegriff ziehen' : 'Ausblendegriff ziehen';
+        grip.onpointerdown = e => clipEffectsDrag(e, c, side); el.append(grip);
+      }
       el.onpointerdown = (e) => clipDrag(e, c);
       el.ondblclick = () => {
         app.seek(c.start);
@@ -847,6 +858,12 @@ function renderTimeline() {
         if (e.key === "Enter") choose(c.id);
       };
       lane.append(el);
+    }
+    for (const c of S.clips.filter(c => c.trackId === track.id)) {
+      const tr = transitionFor(S.clips, c); if (!tr) continue;
+      const badge = document.createElement('button'); badge.className = 'transition-band'; badge.title = tr.type === 'wipe' ? 'Wischblende bearbeiten' : 'Überblendung bearbeiten';
+      badge.style.left = viewTime(tr.start) * px + 'px'; badge.style.width = Math.max(12, (viewTime(tr.end) - viewTime(tr.start)) * px) + 'px'; badge.textContent = tr.type === 'wipe' ? '↦' : '⋈';
+      badge.onclick = () => { choose(c.id); app.seek(tr.start + tr.duration / 2); }; lane.append(badge);
     }
     $("lanes").append(lane);
   }
@@ -920,7 +937,7 @@ function clipDrag(e, c) {
     } else {
       const min = Math.min(...originals.map((o) => o.start));
       delta = Math.max(delta, -min);
-      if (snapping) {
+      if (snapping && !event.altKey) {
         const base = originals.find((o) => o.id === c.id);
         delta =
           snapTime(
@@ -976,6 +993,7 @@ function clipDrag(e, c) {
     document.removeEventListener("pointerup", finish);
     document.removeEventListener("pointercancel", finish);
     dragging = false;
+    if (moved && !side && originals.length === 1) Object.assign(c, connectOverlap(S.clips, c));
     if (!moved) {
       history.pop();
       app.seek(c.start);
@@ -1008,7 +1026,7 @@ function readRange() {
 function renderHandles() {
   const fc = app.layers.find((c) => c.kind === "flight" && c.showStats !== false);
   const key =
-    app.layers.map((c) => c.id).join(",") +
+    app.layers.map((c) => c.id + clipName(c)).join(",") +
     "|" +
     selected.join(",") +
     "|" +
@@ -1080,6 +1098,8 @@ function windowDrag(e, c) {
     x = e.clientX,
     y = e.clientY,
     scale = e.target.classList.contains("scale"),
+    imagePan = !cameraDrag && e.altKey && ["video", "photo"].includes(c.kind),
+    imageStart = imageTransform(c.imageTransform),
     gesture = cameraDrag ? map.gesture() : null,
     pan = e.button === 1 || e.button === 2 || e.shiftKey,
     follow = S.map.camera === "follow" && !pan;
@@ -1094,6 +1114,8 @@ function windowDrag(e, c) {
       S.map.range = map.range;
       S.map.camera = follow ? "follow" : "fixed";
       S.viewPose = map.pose();
+    } else if (imagePan) {
+      c.imageTransform = imageTransform({ ...imageStart, x: imageStart.x + dx / initial.w, y: imageStart.y + dy / initial.h });
     } else
       c.rect = normalizedRect(
         scale
@@ -1158,7 +1180,7 @@ function renderInspector() {
     host.innerHTML = `<h3>${clips.length} Clips ausgewählt</h3><p class="hint">Gemeinsam ziehen, teilen, duplizieren oder entfernen. Für einzelne Eigenschaften einen Clip auswählen.</p>`;
     return;
   }
-  const rect = app.rects.get(c.id) || c.rect || { x: 0, y: 0, w: 1, h: 1 },
+  const rect = c.rect || effectScene(S.clips, S.tracks, active(c, app.time) ? app.time : c.start, S.layout).rects.get(c.id) || { x: 0, y: 0, w: 1, h: 1 },
     locked = trackFor(c)?.locked;
   host.innerHTML = `<h3 translate="no">${esc(clipName(c))}</h3><p class="status-chip ${c.auto ? "" : "warning"}">${locked ? "Spur gesperrt. Zum Bearbeiten entsperren." : c.auto ? "Über Aufnahmezeit zugeordnet. Weiterhin frei verschiebbar." : "Position auf der Schnitt-Timeline frei bearbeitbar."}</p><div class="two-fields">${field("Start auf Timeline (s)", "clip-start", viewTime(c.start).toFixed(3), "number", 'min="0" step=".01"')}${field(c.kind === "flight" ? "Dauer vor Automatik (s)" : "Dauer (s)", "clip-length", length(c).toFixed(3), "number", 'min=".05" step=".01"')}</div><div class="two-fields">${field("Quell-Anfang (s)", "clip-in", c.in.toFixed(3), "number", 'min="0" step=".01"')}${field("Quell-Ende (s)", "clip-out", c.out.toFixed(3), "number", 'min=".05" step=".01"')}</div><label>Clip-Tempo<select id="clip-rate">${[0.1, 0.25, 0.5, 1, 2, 4, 5, 10, 20, 50, 100, 150, 200, ...(![0.1, 0.25, 0.5, 1, 2, 4, 5, 10, 20, 50, 100, 150, 200].includes(c.rate) ? [c.rate] : [])].map((n) => `<option value="${n}" ${n === c.rate ? "selected" : ""}>${n}×</option>`).join("")}</select></label>`;
   const bind = (id, action) => {
@@ -1200,44 +1222,7 @@ function renderInspector() {
     c.rate = Number(v);
     c.manualSpeed = true;
   });
-  if (c.kind !== "audio") {
-    host.insertAdjacentHTML(
-      "beforeend",
-      `<details open><summary>Bild & Position</summary><div class="two-fields">${field("Links (%)", "pos-x", (rect.x * 100).toFixed(1), "number", 'step=".5"')}${field("Oben (%)", "pos-y", (rect.y * 100).toFixed(1), "number", 'step=".5"')}${field("Breite (%)", "pos-w", (rect.w * 100).toFixed(1), "number", 'min="4" max="100" step=".5"')}${field("Höhe (%)", "pos-h", (rect.h * 100).toFixed(1), "number", 'min="4" max="100" step=".5"')}</div><label>Deckkraft<input id="clip-opacity" type="range" min="0" max="100" value="${(c.opacity ?? 1) * 100}"></label>${["video", "photo"].includes(c.kind) ? `<label>Bildausschnitt<select id="clip-fit"><option value="contain" ${c.fit !== "cover" ? "selected" : ""}>Vollständig einpassen</option><option value="cover" ${c.fit === "cover" ? "selected" : ""}>Fenster ausfüllen / beschneiden</option></select></label>` : ""}<button id="clip-full">Vollbild</button> <button id="clip-auto">Layout verwenden</button></details>`,
-    );
-    for (const key of ["x", "y", "w", "h"])
-      bind(
-        "pos-" + key,
-        (v) => (c.rect = normalizedRect({ ...rect, [key]: Number(v) / 100 })),
-      );
-    bind("clip-opacity", (v) => (c.opacity = Number(v) / 100));
-    if ($("clip-fit")) bind("clip-fit", (v) => (c.fit = v));
-    $("clip-full").onclick = () => {
-      if (locked) return;
-      snapshot();
-      c.rect = { x: 0, y: 0, w: 1, h: 1 };
-      changed();
-    };
-    $("clip-auto").onclick = () => {
-      if (locked) return;
-      snapshot();
-      c.rect = null;
-      changed();
-    };
-  }
-  host.insertAdjacentHTML(
-    "beforeend",
-    `<div class="two-fields">${field("Einblenden (s)", "fade-in", c.fadeIn || 0, "number", 'min="0" step=".1"')}${field("Ausblenden (s)", "fade-out", c.fadeOut || 0, "number", 'min="0" step=".1"')}</div>`,
-  );
-  bind("fade-in", (v) => (c.fadeIn = clamp(Number(v) || 0, 0, length(c))));
-  bind("fade-out", (v) => (c.fadeOut = clamp(Number(v) || 0, 0, length(c))));
-  if (["video", "audio"].includes(c.kind)) {
-    host.insertAdjacentHTML(
-      "beforeend",
-      `<label>Lautstärke (%)<input id="clip-volume" type="number" min="0" max="200" value="${Math.round((c.volume ?? 1) * 100)}"></label>`,
-    );
-    bind("clip-volume", (v) => (c.volume = clamp(Number(v) / 100, 0, 2)));
-  }
+  renderClipEffects({ host, clip: c, state: S, rect, locked, field, snapshot, changed, render: () => app.render() });
   if (c.kind === "title") {
     host.insertAdjacentHTML(
       "beforeend",
@@ -1298,7 +1283,7 @@ function renderInspector() {
   }
   host
     .querySelectorAll("input,select,textarea,button")
-    .forEach((el) => (el.disabled = !!locked));
+    .forEach((el) => (el.disabled ||= !!locked));
 }
 function resync(c) {
   const a = assetFor(c),
@@ -1445,6 +1430,8 @@ async function restore(data) {
     S.flight = finalizeFlight(S.flight.points, S.flight.name, {
       format: S.flight.format,
       pilot: S.flight.pilot,
+      displayName: S.flight.displayName,
+      showNameTag: S.flight.showNameTag,
     });
     map.load(S.flight);
   }
@@ -1568,9 +1555,7 @@ function wire() {
     e.target.value = "";
     showGallery("flights");
   });
-  $("demo").onclick = $("demo-project").onclick = safe(async () =>
-    attachFlight(await app.api("/api/demo")),
-  );
+  $("demo").onclick = $("demo-project").onclick = safe(async () => attachFlight(await app.api("/api/demo")));
   $("source-close").onclick = () => {
     ["source-video", "source-audio"].forEach((id) => $(id).pause());
     $("source-preview").hidden = true;
@@ -1641,13 +1626,12 @@ function wire() {
     renderInspector();
     app.render();
   };
-  $("zoom").oninput = (e) => {
-    zoom = Number(e.target.value);
-    renderTimeline();
-  };
+  $("zoom").oninput = e => setTimelineZoom(Number(e.target.value));
+  $("zoom-selection").onclick = fitSelection;
   $("zoom-fit").onclick = () => {
     zoom = 0;
     $("zoom").value = 0;
+    $("timeline-scroll").scrollLeft = 0;
     renderTimeline();
   };
   $("snap").onclick = () => {
@@ -1655,9 +1639,14 @@ function wire() {
     $("snap").classList.toggle("active", snapping);
     $("snap").setAttribute("aria-pressed", snapping);
   };
-  $("timeline-scroll").onscroll = (e) =>
-    ($("track-labels").style.transform =
-      `translateY(${-e.target.scrollTop}px)`);
+  $("timeline-scroll").onscroll = e => { $("track-labels").style.transform = 'translateY(' + (-e.target.scrollTop) + 'px)'; renderRuler(); };
+  $("timeline-scroll").addEventListener('wheel', e => {
+    if (dragging) return;
+    e.preventDefault(); const scroll = $("timeline-scroll"), delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scroll.clientHeight : 1);
+    if (e.altKey) { scroll.scrollTop += delta; return; }
+    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { scroll.scrollLeft += e.deltaX || delta; return; }
+    setTimelineZoom(zoom - clamp(delta, -300, 300) * .003, e.clientX - scroll.getBoundingClientRect().left);
+  }, { passive: false });
   $("ruler").onpointerdown = (e) => {
     e.preventDefault();
     const move = (ev) =>
@@ -1720,6 +1709,15 @@ function wire() {
     fitStage();
   };
   $("map-mouse").onchange = (e) => setMouseMode(!e.target.checked);
+  let imageWheelTimer;
+  $("stage").addEventListener('wheel', e => {
+    const handle = e.target.closest('.window-handle'), clip = handle && S.clips.find(c => c.id === handle.dataset.id);
+    if (!arrange || !clip || !['video', 'photo'].includes(clip.kind) || trackFor(clip)?.locked) return;
+    e.preventDefault(); app.pause(); if (!imageWheelTimer) snapshot(); clearTimeout(imageWheelTimer);
+    const transform = imageTransform(clip.imageTransform);
+    clip.imageTransform = imageTransform({ ...transform, zoom: transform.zoom * Math.exp(-clamp(e.deltaY * (e.deltaMode === 1 ? 16 : 1), -300, 300) * .0015) });
+    imageWheelTimer = setTimeout(() => { imageWheelTimer = null; changed(); }, 180);
+  }, { passive: false });
   let wheelTimer;
   $("stage").addEventListener(
     "wheel",
@@ -1965,6 +1963,9 @@ function wire() {
       return;
     const key = e.key.toLowerCase();
     if (key === "escape") showPanel(null);
+    if (key === 'f' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); if (e.shiftKey) $("zoom-fit").click(); else fitSelection(); }
+    if (['+', '=', '-'].includes(key) && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setTimelineZoom(zoom + (key === '-' ? -.35 : .35)); }
+    if (key === 'n' && !e.ctrlKey && !e.metaKey) $("snap").click();
     if (e.code === "Space") {
       e.preventDefault();
       $("play").click();

@@ -318,7 +318,7 @@
             ><button id="split">✂ Teilen <kbd>S</kbd></button
             ><button id="duplicate">Duplizieren</button
             ><button id="delete">Entfernen</button
-            ><button id="snap" class="active" aria-pressed="true">
+            ><button id="snap" class="active" aria-pressed="true" title="Clipkanten rasten an anderen Clipkanten und am Abspielkopf ein. Alt beim Ziehen schaltet Einrasten vorübergehend aus. N schaltet um.">
               ⌁ Einrasten
             </button>
           </div>
@@ -326,14 +326,14 @@
             <select id="timeline-mode" aria-label="Zeitanzeige">
               <option value="film">Filmzeit</option>
               <option value="edit">Schnittzeit ohne Automatik</option></select
-            ><button id="zoom-fit">Einpassen</button
+            ><button id="zoom-fit" title="Gesamte Timeline einpassen · Umschalt+F">Einpassen</button><button id="zoom-selection" title="Markierte Clips einpassen · F" disabled>Auswahl einpassen</button
             ><label
               >−
               <input
                 id="zoom"
                 type="range"
                 min="-1"
-                max="4"
+                max="14"
                 step=".05"
                 value="0"
               />
@@ -390,8 +390,7 @@
         </div>
         <footer class="timeline-footer">
           <span id="timeline-hint"
-            >Clips ziehen zum Verschieben · Ränder ziehen zum Kürzen · Strg für
-            Mehrfachauswahl</span
+            >Mausrad: Zoom · Umschalt + Mausrad: horizontal · Alt + Mausrad: Spuren scrollen · F: Auswahl einpassen</span
           ><span id="duration-label">30 fps</span>
         </footer>
       </section>

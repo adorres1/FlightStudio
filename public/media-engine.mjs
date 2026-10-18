@@ -1,4 +1,5 @@
 import { sourceTime, fade, clamp, active } from "/lib/timeline.mjs";
+import { audioGain } from '/lib/clip-effects.mjs';
 export class MediaEngine {
   constructor(onError, silent = false) {
     this.elements = new Map();
@@ -98,7 +99,7 @@ export class MediaEngine {
       if (item.gain)
         item.gain.gain.value =
           playing && !track.muted && rate <= 4 && !wait
-            ? (c.volume ?? 1) * fade(c, time)
+            ? audioGain(state.clips, c, time)
             : 0;
       const ready = !el.seeking && el.readyState >= 3;
       hold ||= !ready;

@@ -1,6 +1,6 @@
 import { sampleFlight } from "/lib/flight.mjs";
 import { cameraAt } from "/lib/camera.mjs";
-import { flightReadouts } from "/lib/flight-overlays.mjs";
+import { flightReadouts, flightName } from "/lib/flight-overlays.mjs";
 export class FlightMap {
   constructor(warn) {
     const C = (this.C = window.Cesium);
@@ -49,6 +49,12 @@ export class FlightMap {
         outlineWidth: 3,
         outlineColor: C.Color.WHITE,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+      label: {
+        show: false, text: '', font: '14px sans-serif',
+        fillColor: C.Color.WHITE, showBackground: true,
+        backgroundColor: C.Color.fromCssColorString('#11222be6'),
+        pixelOffset: new C.Cartesian2(0, -26), disableDepthTestDistance: Infinity,
       },
     });
     this.setStyle("satellite");
@@ -180,9 +186,13 @@ export class FlightMap {
     this.overlayKey = null;
   }
   syncOverlays(overlays = []) {
+    if (this.flight) {
+      this.marker.label.text = flightName(this.flight).slice(0, 100);
+      this.marker.label.show = this.flight.showNameTag === true;
+    }
     this.overlays = overlays;
     const key = JSON.stringify(
-      overlays.map((o) => [o.id, o.name, o.color, o.visible]),
+      overlays.map((o) => [o.id, o.name, o.color, o.visible, o.showNameTag]),
     );
     if (key === this.overlayKey) return;
     this.overlayKey = key;
@@ -231,7 +241,8 @@ export class FlightMap {
           disableDepthTestDistance: Infinity,
         },
         label: {
-          text: String(overlay.name || overlay.flight.name).slice(0, 32),
+          show: overlay.showNameTag !== false,
+          text: String(overlay.name || overlay.flight.name).slice(0, 100),
           font: "13px sans-serif",
           fillColor: color,
           showBackground: true,
@@ -254,7 +265,7 @@ export class FlightMap {
   get legend() {
     if (!this.flight) return [];
     return [
-      { name: this.flight.pilot || this.flight.name, color: "#f28143" },
+      { name: flightName(this.flight), color: "#f28143" },
       ...(this.overlays || [])
         .filter((o) => o.visible !== false)
         .map((o) => ({ name: o.name || o.flight.name, color: o.color })),
@@ -368,8 +379,10 @@ export class FlightMap {
   }
   resize(w, h) {
     const element = document.querySelector("#map-source");
-    w = Math.max(64, Math.round(w));
-    h = Math.max(64, Math.round(h));
+    const limit = Math.min(8192, this.viewer.scene.context.maximumTextureSize || 8192);
+    const scale = Math.min(1, limit / Math.max(w, h));
+    w = Math.max(64, Math.round(w * scale));
+    h = Math.max(64, Math.round(h * scale));
     if (element.clientWidth !== w || element.clientHeight !== h) {
       element.style.width = w + "px";
       element.style.height = h + "px";
