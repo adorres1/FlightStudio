@@ -1,3 +1,4 @@
+import { drawInstruments } from './instrument-renderer.mjs';
 import { fade } from "/lib/timeline.mjs";
 import { readoutRect } from "/lib/flight-overlays.mjs";
 import { imagePlacement, transitionProgress } from "/lib/clip-effects.mjs";
@@ -87,6 +88,7 @@ export function drawFrame(ctx, { state, layers, elements, map, rects, transition
     ctx.fillText(t(state.clips.length ? 'Kein Clip an dieser Position' : 'Dein nächster Film beginnt hier.',language),w/2,h/2);
     ctx.textAlign='left';
   }
+  drawInstruments(ctx, state, time, language);
 }
 function drawReadouts(ctx, clip, rows, time, language) {
   const r = readoutRect(clip, rows.length), w = r.w * ctx.canvas.width,

@@ -1,0 +1,45 @@
+/* The tour is a DOM overlay; it is never drawn onto the exported canvas. */
+dialog#tutorial-dialog, [data-theme="dark"] dialog#tutorial-dialog {
+  position: fixed; inset: 0; margin: 0; padding: 0; width: 100vw; height: 100dvh;
+  max-width: none; max-height: none; border: 0; border-radius: 0; background: transparent;
+  overflow: hidden; box-shadow: none; color: #213f37;
+}
+#tutorial-dialog::backdrop { background: transparent; backdrop-filter: none; }
+.tutorial-spotlight { position: fixed; pointer-events: none; border: 3px solid #8aefb9; border-radius: 9px; box-shadow: 0 0 0 9999px #0d211ac7, 0 0 0 6px #8aefb933; }
+dialog#tutorial-dialog.without-target { background: #0d211ac7; }
+.tutorial-arrow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.tutorial-arrow-line { fill: none; stroke: #8aefb9; stroke-width: 3; }
+#tutorial-arrowhead path { fill: #8aefb9; }
+.tutorial-card { position: fixed; width: min(370px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; padding: 19px; background: #fff; border: 1px solid #9db8a9; border-radius: 14px; box-shadow: 0 16px 50px #061b194d; }
+.tutorial-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+#tutorial-counter { color: #356f59; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+#tutorial-close { padding: 0 7px; font-size: 24px; line-height: 25px; border: 0; background: transparent; }
+#tutorial-progress { width: 100%; height: 4px; margin: 0 0 17px; accent-color: #347755; border: 0; }
+#tutorial-title { margin: 0 0 12px; font-size: 19px; line-height: 1.25; color: #193e30; }
+#tutorial-title:focus { outline: none; }
+#tutorial-body { font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+#tutorial-tip { font-size: 12px; line-height: 1.5; background: #edf6f0; border-left: 3px solid #65a782; padding: 10px; border-radius: 0 6px 6px 0; margin-bottom: 16px; }
+#tutorial-jump-label { font-size: 11px; margin-bottom: 5px; }
+#tutorial-jump { width: 100%; font-size: 11px; text-overflow: ellipsis; }
+.tutorial-actions { display: flex; align-items: center; gap: 6px; margin-top: 16px; }
+.tutorial-actions > span { flex: 1; }
+.tutorial-actions button { padding: 8px 10px; font-size: 12px; }
+#tutorial-guide { padding-left: 0; border: 0; background: transparent; text-decoration: underline; text-underline-offset: 3px; }
+#help-dialog { width: min(760px, calc(100vw - 32px)); }
+.guide-intro { padding: 18px; margin: 12px 0 22px; border-radius: 10px; background: #edf6f0; border: 1px solid #c7dece; }
+.guide-intro p { margin-bottom: 15px; }
+.guide-intro .hint { display: block; margin-top: 10px; }
+.guide-chapters { margin-top: 18px; }
+.guide-chapters details { border-top: 1px solid var(--line); padding: 13px 0; }
+.guide-chapters summary { cursor: pointer; font-weight: 650; font-size: 14px; line-height: 1.4; }
+.guide-chapters details[open] summary { margin-bottom: 15px; }
+.guide-chapters p, .guide-chapters li { font-size: 13px; line-height: 1.65; }
+.guide-shortcuts { display: grid; grid-template-columns: minmax(100px, 1fr) 2fr; gap: 12px; font-size: 12px; line-height: 1.5; }
+.guide-shortcuts dt { font-weight: 650; }
+.guide-shortcuts dd { margin: 0; }
+#empty-tutorial { margin-top: 12px; }
+[data-theme="dark"] .tutorial-card { background: #202e29; color: #e4eee8; border-color: #608775; }
+[data-theme="dark"] #tutorial-title, [data-theme="dark"] #tutorial-counter { color: #b6f0cd; }
+[data-theme="dark"] :is(#tutorial-tip,.guide-intro) { background: #2b4235; color: #d4e8d9; border-color: #537760; }
+@media (max-height: 560px) { .tutorial-card { padding: 12px; } #tutorial-body { line-height: 1.45; } #tutorial-tip { margin-bottom: 8px; } }
+@media (prefers-reduced-motion: reduce) { #tutorial-dialog * { scroll-behavior: auto; } }

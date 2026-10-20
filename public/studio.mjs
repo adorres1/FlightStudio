@@ -1,3 +1,5 @@
+import { instrumentRect, instrumentReading } from '/lib/instruments.mjs';
+import { installInstruments } from './instrument-panel.mjs';
 import { DateTime } from "luxon";
 import { parseCaptureTime } from "/lib/time.mjs";
 import { finalizeFlight, toKML } from "/lib/flight.mjs";
@@ -39,6 +41,7 @@ import { renderExport } from "./render-export.mjs";
 import { pixelSize } from "/lib/export-settings.mjs";
 import { installLanguageUI, getLanguage, translate as t } from "./i18n.mjs";
 import { installThemeUI } from "./theme.mjs";
+import { installTutorial } from "./tutorial.mjs";
 const renderJob = new URLSearchParams(location.search).get("renderJob");
 // Hidden native windows do not reliably receive compositor animation frames.
 // The export renderer owns a regular timer; its Chromium background throttling is disabled.
@@ -91,6 +94,8 @@ const fresh = () => ({
   ],
   flight: null,
   flightOverlays: [],
+  instruments: [],
+  instrumentsVisible: true,
   origin: null,
   zone: "Europe/Zurich",
   layout: "auto",
@@ -130,6 +135,9 @@ let S = fresh(),
 let replaceFlightNext = false;
 let activePanel = null;
 let activeGallery = "media";
+let tutorial = null;
+let instrumentPanel = null, selectedInstrument = null;
+function selectInstrument(id) { selectedInstrument = id; selected = []; handleKey = ""; renderSelection(); showPanel("instruments"); }
 function showGallery(name) {
   activeGallery = name;
   $("library").hidden = !name;
@@ -155,8 +163,10 @@ function showPanel(name) {
   $("inspector-kind").hidden = name !== "clip";
   $("camera-panel").hidden = name !== "camera";
   $("project-panel").hidden = name !== "project";
-  $("panel-title").textContent = { clip: "Eigenschaften", camera: "Flugkarte & Kamera", project: "Projekt-Einstellungen" }[name] || "Eigenschaften";
-  for (const id of ["clip", "camera", "project"]) {
+  $("instruments-panel").hidden = name !== "instruments";
+  if (name === "instruments") instrumentPanel?.render();
+  $("panel-title").textContent = { instruments: "Instrumente", clip: "Eigenschaften", camera: "Flugkarte & Kamera", project: "Projekt-Einstellungen" }[name] || "Eigenschaften";
+  for (const id of ["clip", "camera", "instruments", "project"]) {
     $("panel-" + id).setAttribute("aria-expanded", name === id);
     $("panel-" + id).classList.toggle("active", name === id);
   }
@@ -280,6 +290,7 @@ function changed() {
       clamp(app.range[1], 0, duration()),
     ];
   selected = selected.filter((id) => S.clips.some((c) => c.id === id));
+  if (selected.length) selectedInstrument = null;
   engine?.prune(S.clips);
   refresh();
   scheduleSave();
@@ -589,6 +600,7 @@ app.render = () => {
   return hold || (app.exporting && waiting);
 };
 function choose(id, multi = false, reveal = true) {
+  selectedInstrument = null;
   if (multi)
     selected = selected.includes(id)
       ? selected.filter((x) => x !== id)
@@ -1024,13 +1036,14 @@ function readRange() {
   renderRange();
 }
 function renderHandles() {
+  const widgets = S.instrumentsVisible === false ? [] : (S.instruments || []).filter(i => i.enabled !== false);
   const fc = app.layers.find((c) => c.kind === "flight" && c.showStats !== false);
   const key =
     app.layers.map((c) => c.id + clipName(c)).join(",") +
     "|" +
     selected.join(",") +
     "|" +
-    arrange + "|" + (fc?.id || "");
+    arrange + "|" + (fc?.id || "") + "|" + widgets.map(i => i.id).join(",") + "|" + selectedInstrument;
   if (key !== handleKey) {
     handleKey = key;
     $("handles").replaceChildren();
@@ -1054,8 +1067,23 @@ function renderHandles() {
       $("handles").append(el);
     }
   }
+  for (const item of widgets) {
+    if (![...$("handles").children].some(el => el.dataset.instrument === item.id)) {
+      const el = document.createElement("div");
+      el.className = "window-handle instrument-handle" + (selectedInstrument === item.id ? " selected" : "");
+      el.dataset.instrument = item.id; el.tabIndex = 0; el.setAttribute("role", "button");
+      const name = instrumentReading(S, item, app.time, getLanguage()).label;
+      el.setAttribute("aria-label", (getLanguage() === "en" ? "Move instrument: " : "Instrument verschieben: ") + name);
+      el.innerHTML = `<span class="caption" translate="no">${esc(name)}</span><span class="scale"></span>`;
+      el.onpointerdown = e => instrumentDrag(e, item);
+      el.ondblclick = () => selectInstrument(item.id);
+      el.onkeydown = e => { if (e.key === "Enter") { e.stopPropagation(); selectInstrument(item.id); } };
+      $("handles").append(el);
+    }
+  }
   for (const el of $("handles").children) {
-    const r = el.dataset.stats ? readoutRect(fc, map.readouts?.length || 1) : app.rects.get(el.dataset.id);
+    const widget = widgets.find(i => i.id === el.dataset.instrument);
+    const r = widget ? instrumentRect(widget.rect) : el.dataset.stats ? readoutRect(fc, map.readouts?.length || 1) : app.rects.get(el.dataset.id);
     if (r) {
       el.style.left = r.x * 100 + "%";
       el.style.top = r.y * 100 + "%";
@@ -1064,6 +1092,21 @@ function renderHandles() {
     }
   }
   $("stage").classList.toggle("map-interaction", !arrange);
+}
+function instrumentDrag(e, item) {
+  if (!arrange || e.button !== 0) return;
+  e.preventDefault(); e.stopPropagation(); app.pause(); snapshot();
+  selectedInstrument = item.id; selected = []; handleKey = ""; renderSelection();
+  if (activePanel === "instruments") instrumentPanel?.render();
+  dragging = true;
+  const start = instrumentRect(item.rect), bounds = $("stage").getBoundingClientRect();
+  const x = e.clientX, y = e.clientY, resize = e.target.classList.contains("scale");
+  const move = event => {
+    const dx = (event.clientX - x) / bounds.width, dy = (event.clientY - y) / bounds.height;
+    item.rect = instrumentRect(resize ? { ...start, w: start.w + dx, h: start.h + dy } : { ...start, x: start.x + dx, y: start.y + dy });
+  };
+  const finish = () => { document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", finish); document.removeEventListener("pointercancel", finish); dragging = false; changed(); };
+  document.addEventListener("pointermove", move); document.addEventListener("pointerup", finish); document.addEventListener("pointercancel", finish);
 }
 function statsDrag(e, clip) {
   if (!arrange || e.button !== 0 || trackFor(clip)?.locked) return;
@@ -1340,6 +1383,7 @@ function renderCameras() {
   });
 }
 function refresh() {
+  if (activePanel === "instruments") instrumentPanel?.render();
   $("timeline-mode").value = compact ? "film" : "edit";
   $("gap-auto").checked = S.gaps.enabled;
   $("gap-speed").value = S.gaps.speed;
@@ -1428,6 +1472,7 @@ async function restore(data) {
   rangeAuto = true;
   if (S.flight) {
     S.flight = finalizeFlight(S.flight.points, S.flight.name, {
+      ...S.flight,
       format: S.flight.format,
       pilot: S.flight.pilot,
       displayName: S.flight.displayName,
@@ -1438,6 +1483,7 @@ async function restore(data) {
   S.flightOverlays = (data.flightOverlays || []).map((o) => ({
     ...o,
     flight: finalizeFlight(o.flight.points, o.flight.name, {
+      ...o.flight,
       format: o.flight.format,
       pilot: o.flight.pilot,
     }),
@@ -1531,7 +1577,7 @@ function wire() {
   for (const name of ["media", "flights"])
     $("gallery-" + name).onclick = () => showGallery(activeGallery === name ? null : name);
   $("gallery-close").onclick = () => showGallery(null);
-  for (const name of ["clip", "camera", "project"])
+  for (const name of ["clip", "camera", "instruments", "project"])
     $("panel-" + name).onclick = () => showPanel(activePanel === name ? null : name);
   $("panel-close").onclick = () => showPanel(null);
   $("import-media").onclick = $("empty-import").onclick = () =>
@@ -1955,13 +2001,14 @@ function wire() {
   };
   document.addEventListener("keydown", (e) => {
     if (
-      app.exporting ||
+      app.exporting || tutorial?.active ||
       /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) ||
       $("help-dialog").open ||
       $("export-dialog").open
     )
       return;
     const key = e.key.toLowerCase();
+    if (selectedInstrument && activePanel === "instruments" && ["Delete", "Backspace"].includes(e.key)) { e.preventDefault(); snapshot(); S.instruments = (S.instruments || []).filter(i => i.id !== selectedInstrument); selectedInstrument = null; changed(); return; }
     if (key === "escape") showPanel(null);
     if (key === 'f' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); if (e.shiftKey) $("zoom-fit").click(); else fitSelection(); }
     if (['+', '=', '-'].includes(key) && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setTimelineZoom(zoom + (key === '-' ? -.35 : .35)); }
@@ -2004,7 +2051,7 @@ function wire() {
     "drop",
     safe(async (e) => {
       document.body.classList.remove("drag-files");
-      if (!e.dataTransfer.files.length) return;
+      if (tutorial?.active || !e.dataTransfer.files.length) return;
       e.preventDefault();
       const files = [...e.dataTransfer.files],
         flights = files.filter((f) => /\.(igc|kml|kmz)$/i.test(f.name));
@@ -2102,8 +2149,9 @@ async function init() {
   $("export-hint").textContent = status.backgroundExport
     ? "Export im Hintergrund: Du kannst weiterarbeiten oder das Editorfenster schliessen. Der Rechner und der FlightStudio-Hintergrundprozess müssen weiterlaufen. Jedes Bild wird anhand der Timeline berechnet. Die Dauer hängt von Film, Auflösung und Rechner ab."
     : "Aufzeichnung wie in der Vorschau. Diesen Tab sichtbar lassen. Für Export bei geschlossenem Fenster die Desktop-App verwenden.";
+  if (!renderJob) instrumentPanel = installInstruments({ state: () => S, selected: () => selectedInstrument, select: selectInstrument, commit: fn => { app.pause(); snapshot(); fn(); changed(); } });
   wire();
-  window.addEventListener("flightstudio-language", () => { renderSelection(); exporter.background && void exporter.refresh(); });
+  window.addEventListener("flightstudio-language", () => { renderSelection(); handleKey = ""; instrumentPanel?.render(); exporter.background && void exporter.refresh(); });
   if (renderJob) {
     const scene = await app.api(`/api/exports/${renderJob}/scene`);
     await restore(scene.project);
@@ -2132,6 +2180,29 @@ async function init() {
     refresh();
   }
   app.size();
+  tutorial = installTutorial({
+    pause: () => { app.pause(); $("source-video").pause(); $("source-audio").pause(); },
+    canStart: () => {
+      if (!app.exporting && !dragging) return true;
+      app.toast(t("Bitte den laufenden Vorgang zuerst beenden."));
+      return false;
+    },
+    captureUI: () => ({ gallery: activeGallery, panel: activePanel,
+      sourceHidden: $("source-preview").hidden,
+      details: [...document.querySelectorAll('.library details,.inspector details')].map(el => [el, el.open]) }),
+    prepareUI: step => {
+      if (activeGallery !== step.gallery) showGallery(step.gallery);
+      if (activePanel !== step.panel) showPanel(step.panel);
+      if (step.panel === 'camera') $("camera-panel").open = true;
+      if (step.panel === 'project') $("project-panel").open = true;
+    },
+    restoreUI: ui => {
+      if (!ui) return;
+      showGallery(ui.gallery); showPanel(ui.panel);
+      $("source-preview").hidden = ui.sourceHidden;
+      for (const [el, open] of ui.details) if (el.isConnected) el.open = open;
+    },
+  });
   busy(false);
   nextFrame(tick);
   if (exporter.background) void exporter.refresh().catch(() => {});

@@ -11,7 +11,7 @@ $taskPortable = Join-Path $taskBuild 'FlightStudio-V2-Windows-x64'
 $taskSource = Join-Path $taskBuild 'FlightStudio-V2-Source'
 New-Item -ItemType Directory -Force -Path $taskPortable,$taskSource | Out-Null
 $taskFiles = @('server.mjs','package.json','package-lock.json','README.md','LICENSE','THIRD-PARTY-NOTICES.txt','.gitignore','.gitattributes','START-FlightStudio-Desktop.cmd','START-FlightStudio-V2.cmd','STOP-FlightStudio-V2.cmd')
-$taskDirs = @('public','lib','desktop','scripts','tests')
+$taskDirs = @('public','lib','desktop','scripts','tests','docs')
 foreach ($taskDestination in @($taskPortable,$taskSource)) {
   foreach ($taskName in $taskFiles) { Copy-Item -LiteralPath (Join-Path $taskRoot $taskName) -Destination $taskDestination }
   foreach ($taskName in $taskDirs) { Copy-Item -LiteralPath (Join-Path $taskRoot $taskName) -Destination $taskDestination -Recurse }

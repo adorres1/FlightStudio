@@ -1,4 +1,6 @@
 export const english = {
+  "Instrumente": "Instruments",
+  "Tutorial & Hilfe": "Tutorial & Help", "Tutorial und Anleitung": "Tutorial and guide", "Tutorial starten →": "Start tutorial →", "Bitte den laufenden Vorgang zuerst beenden.": "Please finish the current operation first.",
   "Clip aktiv · Bild und Ton": "Clip enabled · picture and sound",
   "Grösse, Position & Zoom": "Size, position & zoom",
   "Fenster dürfen über den Bildrand hinausreichen. Im fertigen Film ist nur der sichtbare Ausschnitt enthalten.": "Frames can extend beyond the canvas. Only the visible portion appears in the finished film.",

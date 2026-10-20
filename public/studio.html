@@ -7,6 +7,8 @@
     <link rel="icon" href="/favicon.svg" />
     <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
     <link rel="stylesheet" href="/studio.css" />
+    <link rel="stylesheet" href="/tutorial.css" />
+    <link rel="stylesheet" href="/instruments.css" />
     <script type="importmap">
       { "imports": { "luxon": "/vendor/luxon.js" } }
     </script>
@@ -33,13 +35,14 @@
         <button id="gallery-flights" aria-controls="library" aria-expanded="false">Flüge</button>
         <button id="panel-clip" aria-controls="inspector" aria-expanded="false">Clip</button>
         <button id="panel-camera" aria-controls="inspector" aria-expanded="false">Flugkarte & Kamera</button>
+        <button id="panel-instruments" aria-controls="inspector" aria-expanded="false">Instrumente</button>
         <button id="panel-project" aria-controls="inspector" aria-expanded="false">Projekt-Einstellungen</button>
         <select id="language" aria-label="Sprache / Language"><option value="de">Deutsch</option><option value="en">English</option></select>
         <select id="theme" aria-label="Erscheinungsbild"><option value="light">☀ Hell</option><option value="dark">☾ Dunkel</option></select>
         <button id="new-project">Neu</button
         ><button id="open-project">Öffnen</button
         ><button id="save-project">Projekt sichern</button
-        ><button id="help" class="icon" aria-label="Hilfe">?</button
+        ><button id="help" aria-label="Tutorial und Anleitung">Tutorial & Hilfe</button
         ><button id="export-open" class="primary">Exportieren ↗</button>
       </div>
     </header>
@@ -148,6 +151,7 @@
               <button id="empty-import" class="primary">
                 Material auswählen</button
               ><button id="demo-project">Demoflug</button>
+              <div><button id="empty-tutorial">Tutorial starten →</button></div>
             </div>
           </div>
         </div>
@@ -195,6 +199,7 @@
           <button id="panel-close" class="icon" aria-label="Seitenleiste schliessen">×</button>
         </div>
         <div id="inspector-content"></div>
+        <section id="instruments-panel" hidden></section>
         <details id="camera-panel" class="map-settings" open hidden>
           <summary>Flugkarte & Kamera</summary>
           <label

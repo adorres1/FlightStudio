@@ -4,18 +4,32 @@ A local video editor for combining flight tracks with videos, photos and audio. 
 
 The interface supports English and German, with light and dark themes.
 
+## Tutorial and user guide / Tutorial und Anleitung
+
+In FlightStudio, choose **Tutorial & Help → Start tutorial** (German: **Tutorial & Hilfe → Tutorial starten**). An empty project also has a direct start button. The 17-step tour highlights the actual controls, opens the relevant panels and explains them with arrows. Use Back/Next, the topic picker or Esc. It pauses playback without editing your project and restores the previous panel arrangement afterwards.
+
+The same help window includes a searchable guide that works offline. Read it on GitHub: **[Deutsche Anleitung](docs/ANLEITUNG.de.md)** · **[English user guide](docs/GUIDE.en.md)**.
+
+The tutorial is included from **2.4.0** onwards. Download the newer installer if you are using 2.3.0. Save your project before updating.
+
 ## Download and install / Herunterladen und installieren
 
 **[Download FlightStudio for Windows](https://github.com/adorres1/FlightStudio/releases/latest)**
 
-- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.3.0.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
-- **Portable:** Download `FlightStudio-V2-Portable-2.3.0.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
+- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.4.0.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
+- **Portable:** Download `FlightStudio-V2-Portable-2.4.0.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
 - Windows 10/11, 64-bit. No ChatGPT account, GitHub account, Node.js installation or command line is needed. Internet access is needed for online map layers.
 - The executable is currently unsigned. Windows or an organization's application-control policy may block it. Do not disable security protections to run it.
 
-**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.3.0.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
+**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.4.0.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
 
 First steps: import an IGC flight, import videos/photos, review timestamp alignment, edit on the timeline, then export. Save the project before closing or updating. Imported files and exports stay on your computer.
+
+## Flight instruments / Fluginstrumente
+
+Open **Instruments** to add a starter layout or individual displays: compass (GPS course), GPS/pressure vario, altitude tape, ground speed, UTC clock, elapsed time, distance, ground glide ratio and coordinates. Recorded IGC extensions and header fields are available when present. Each display has its own flight source, visibility, position, size and transparency. The same instruments appear in the live preview and exported film. Hide the map track while retaining its clips to show instruments without the map.
+
+**Deutsch:** Oben **Instrumente → Grundlayout** wählen. Jede Anzeige lässt sich separat einblenden, verschieben und skalieren. **Hintergrund 0 %** macht sie transparent. Details und Datenherkunft stehen in der [Anleitung](docs/ANLEITUNG.de.md#instruments). Für Zusatzfelder in älteren Projekten die IGC-Datei erneut importieren.
 
 ## Features
 
@@ -56,7 +70,7 @@ On Windows, `START-FlightStudio-V2.cmd` starts the browser edition and `STOP-Fli
 npm run build:desktop
 ```
 
-The installer and portable executable are generated under `release/desktop-2.3.0`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
+The installer and portable executable are generated under `release/desktop-2.4.0`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
 
 Builds are unsigned unless the distributor configures code signing. Windows application-control policies can block unsigned builds. No security settings are changed by the application.
 

@@ -1,3 +1,4 @@
+import { createInstrument } from '../lib/instruments.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn,execFileSync} from 'node:child_process';
@@ -15,6 +16,7 @@ test('Local server: imports, timestamps, byte ranges, access protection and MP4 
   const call=async(route,options={})=>{const response=await fetch(base+route,{...options,headers:{'X-FlightStudio-Token':status.token,...options.headers}});const payload=await response.json();assert.ok(response.ok,JSON.stringify(payload));return payload;};
   assert.match(await fetch(base+'/').then(r=>r.text()),/studio\.mjs/);
   assert.equal((await fetch(base+'/lib/clip-effects.mjs')).status,200);
+  for (const route of ['/lib/instruments.mjs','/lib/igc-fields.mjs','/instrument-renderer.mjs']) assert.equal((await fetch(base+route)).status,200,route);
   assert.equal((await fetch(base+'/examples/Demo-Video-B.mp4',{method:'HEAD'})).status,200);
   const upload=async(route,name)=>{const form=new FormData();form.append('file',new Blob([await fs.readFile(path.join(root,'examples',name))]),name);return call(route,{method:'POST',body:form});};
   assert.equal((await fetch(base+'/api/exports',{method:'POST'})).status,403);
@@ -76,6 +78,18 @@ test('Local server: imports, timestamps, byte ranges, access protection and MP4 
       if(type==='dissolve')for(const p of [left,right]){assert.ok(p[0]>110&&p[0]<145,JSON.stringify(p));assert.ok(p[2]>110&&p[2]<145,JSON.stringify(p));assert.ok(p[1]<15,JSON.stringify(p));}
       else {assert.ok(left[2]>230&&left[0]<15,JSON.stringify(left));assert.ok(right[0]>230&&right[2]<15,JSON.stringify(right));}
     }
+
+    // A hidden flight track still drives HUD data in the native export worker.
+    const instrument=createInstrument('altitude');instrument.rect={x:.65,y:.25,w:.3,h:.4};instrument.style='value';instrument.background=1;
+    scene.flight=flight;scene.tracks.push({id:'flight',visible:false});
+    scene.clips=[{...scene.clips[0],start:0,in:0,out:2,transitionIn:null},{id:'f',kind:'flight',trackId:'flight',start:0,in:0,out:2,rate:1}];
+    scene.instruments=[instrument];
+    const hud=await call('/api/exports',{method:'POST',body:JSON.stringify({format:'mp4',size:720,fps:30,quality:'high',audio:false,range:[1,1+1/30],project:scene})});
+    let hudDone;for(let i=0;i<400;i++){hudDone=await call('/api/exports/'+hud.id);if(['done','failed'].includes(hudDone.status))break;await new Promise(r=>setTimeout(r,150));}
+    assert.equal(hudDone.status,'done',hudDone.error);
+    const hudFile=path.join(data,'exports',hud.id+'.mp4'),outside=pixel(hudFile,320),inside=pixel(hudFile,1200);
+    assert.ok(outside[0]>230&&outside[1]<15,JSON.stringify(outside));
+    assert.ok(inside[0]<45&&inside[1]<65&&inside[2]<75,'HUD background missing in export: '+JSON.stringify(inside));
 
   }
 });
