@@ -2,13 +2,14 @@
 
 [English guide](GUIDE.en.md) · [Windows-Download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-Für FlightStudio 2.4.0. In der App: **Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
+Für FlightStudio 2.4.1. In der App: **Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
 
 Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich durchsuchen. Nur Online-Karten und Gelände brauchen eine Verbindung.
 
 ## Inhalt
 
 - [1 · Dein erster Flugfilm](#start)
+- [Mediathek und Quellvorschau](#library)
 - [2 · Zeitstempel und Synchronisierung](#timing)
 - [3 · Schneiden, Einrasten und Spuren](#editing)
 - [4 · Gemeinsam schneiden oder nur das Video](#range)
@@ -31,6 +32,16 @@ Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich dur
 3. Mit der Abspiellinie zu einem gut erkennbaren Moment gehen und prüfen, ob Video und Flug zusammenpassen. Clips bei Bedarf verschieben.
 4. Clips kürzen, das Projektlayout wählen und die Vorschau mit der Leertaste prüfen.
 5. Projekt sichern. Für einen ersten Test einen kurzen Bereich markieren und als MP4 mit 1080p/30 fps exportieren. Für den ganzen Film danach Bereich → Alles wählen.
+
+<a id="library"></a>
+
+## Mediathek und Quellvorschau
+
+Links bleiben Videos und Fotos als unbewegte Thumbnails sichtbar. Ein Klick wählt das Medium und zeigt seine Eigenschaften. Plus fügt es in die Timeline ein; passende Aufnahmezeiten werden berücksichtigt. Ohne passende Zeit wird die Abspiellinie verwendet. Doppelklick auf das Thumbnail fügt ebenfalls ein. Ziehen auf eine Spur erlaubt dir, die Position selbst zu bestimmen.
+
+Nur der kleine Vorschau-Knopf ▷ öffnet das Original in einem grossen Fenster. Mit den dortigen Bedienelementen kannst du Video oder Ton ansehen und anhören. Die Timeline bleibt währenddessen pausiert. Esc oder × schliesst die Quellvorschau und stoppt ihren Ton. „An Abspielposition einsetzen“ fügt das Original an der aktuellen Timeline-Position ein und schliesst die Quellvorschau.
+
+Die grosse Programmvorschau zeigt deinen geschnittenen Film mit Layout, Karte und Instrumenten. Play oder die Leertaste startet diese Vorschau. Die Quellvorschau zeigt dagegen das unveränderte Original vor dem Schnitt.
 
 <a id="timing"></a>
 

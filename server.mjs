@@ -84,7 +84,7 @@ export const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`),route=url.pathname;
   if(!['GET','HEAD'].includes(req.method)&&req.headers['x-flightstudio-token']!==TOKEN){json(res,403,{error:'Bitte die Anwendung neu laden.'});return;}
   try{
-    if(req.method==='GET'&&route==='/api/status'){json(res,200,{app:'FlightStudioV2',version:'2.4.0',backgroundExport:Boolean(exportJobs.launch),desktop:Boolean(process.versions.electron),token:TOKEN,ffmpeg:Boolean(ffmpeg&&fs.existsSync(ffmpeg)),dataPath:DATA});return;}
+    if(req.method==='GET'&&route==='/api/status'){json(res,200,{app:'FlightStudioV2',version:'2.4.1',backgroundExport:Boolean(exportJobs.launch),desktop:Boolean(process.versions.electron),token:TOKEN,ffmpeg:Boolean(ffmpeg&&fs.existsSync(ffmpeg)),dataPath:DATA});return;}
     if(req.method==='GET'&&route==='/api/demo'){json(res,200,demoFlight());return;}
     if(req.method==='POST'&&route==='/api/flight'){
       const info=await upload(req,50*1024**2);try{

@@ -2,13 +2,14 @@
 
 [Deutsche Anleitung](ANLEITUNG.de.md) · [Windows download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-For FlightStudio 2.4.0. In the app: **Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
+For FlightStudio 2.4.1. In the app: **Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
 
 The searchable in-app guide works offline. Online map and terrain layers need a connection.
 
 ## Contents
 
 - [1 · Your first flight film](#start)
+- [Media library and source preview](#library)
 - [2 · Timestamps and synchronization](#timing)
 - [3 · Editing, snapping and tracks](#editing)
 - [4 · Cut together or only the video](#range)
@@ -31,6 +32,16 @@ The searchable in-app guide works offline. Online map and terrain layers need a 
 3. Move the playhead to a recognizable moment and check that video and flight match. Move clips if needed.
 4. Trim clips, choose a project layout and check playback with Space.
 5. Save the project. Select a short range and export an MP4 at 1080p/30 fps as a first test. Choose Range → All to export the whole film afterwards.
+
+<a id="library"></a>
+
+## Media library and source preview
+
+Videos and photos stay as still thumbnails in the library. A click selects the media and shows its properties. Plus adds it to the timeline, using matching capture times or otherwise the playhead. Double-clicking the thumbnail also inserts it. Drag onto a track to choose the position yourself.
+
+Only the small preview button ▷ opens the original in a large window. Use its controls to play video or audio. The timeline stays paused. Esc or × closes the source preview and stops its audio. “Insert at playhead” adds the original at the current timeline position and closes the source preview.
+
+The large program preview shows your edited film with its layout, map and instruments. Play or Space starts that preview. The source preview shows the unedited original.
 
 <a id="timing"></a>
 

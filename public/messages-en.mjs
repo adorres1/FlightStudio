@@ -1,4 +1,7 @@
 export const english = {
+  "Quellvorschau öffnen": "Open source preview",
+  "QUELLVORSCHAU": "SOURCE PREVIEW",
+  "Originalmedium ansehen. Die Timeline bleibt pausiert. Esc schliesst die Vorschau.": "View the original media. The timeline stays paused. Press Esc to close the preview.",
   "Instrumente": "Instruments",
   "Tutorial & Hilfe": "Tutorial & Help", "Tutorial und Anleitung": "Tutorial and guide", "Tutorial starten →": "Start tutorial →", "Bitte den laufenden Vorgang zuerst beenden.": "Please finish the current operation first.",
   "Clip aktiv · Bild und Ton": "Clip enabled · picture and sound",

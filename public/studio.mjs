@@ -145,10 +145,7 @@ function showGallery(name) {
   $("media-gallery").hidden = name !== "media";
   $("flight-gallery").hidden = name !== "flights";
   $("gallery-title").textContent = name === "flights" ? "Fluggalerie" : "Mediathek";
-  if (name !== "media") {
-    ["source-video", "source-audio"].forEach((id) => $(id).pause());
-    $("source-preview").hidden = true;
-  }
+  if (name !== "media") closeSourcePreview();
   for (const id of ["media", "flights"]) {
     $("gallery-" + id).setAttribute("aria-expanded", name === id);
     $("gallery-" + id).classList.toggle("active", name === id);
@@ -363,6 +360,8 @@ function availableTrack(kind, start, len, forceNew = false) {
   return track.id;
 }
 function insertAsset(asset, at = null, trackId = null) {
+  app.pause();
+  closeSourcePreview();
   let clips = [];
   const timestamp = capture(asset);
   if (at === null && timestamp !== null && S.flight)
@@ -600,6 +599,7 @@ app.render = () => {
   return hold || (app.exporting && waiting);
 };
 function choose(id, multi = false, reveal = true) {
+  closeSourcePreview();
   selectedInstrument = null;
   if (multi)
     selected = selected.includes(id)
@@ -638,35 +638,40 @@ function renderLibrary() {
     $("asset-grid").innerHTML =
       '<div class="library-empty">＋<br>Dein Material, an einem Ort.<br>Importieren oder Dateien hierher ziehen.</div>';
   for (const a of assets) {
-    const item = document.createElement("button");
+    const item = document.createElement("div");
     item.className = "asset" + (a.id === selectedAsset ? " selected" : "");
     item.draggable = true;
     item.dataset.asset = a.id;
-    item.title = a.name;
-    item.innerHTML =
+    item.innerHTML = `<button type="button" class="asset-select" draggable="true" title="${esc(a.name)}">` +
       (a.type === "audio"
         ? '<span class="audio-art">♫</span>'
-        : `<img src="/thumb/${a.id}" alt="" loading="lazy">`) +
-      `<span class="asset-add" title="In Timeline einsetzen">＋</span><strong translate="no">${esc(a.name)}</strong><small><span>${format(a.duration).split(".")[0]}</span><span>${S.clips.filter((c) => c.assetId === a.id).length}×</span></small>`;
-    item.onclick = (e) => {
-      if (e.target.closest(".asset-add")) {
-        snapshot();
-        insertAsset(a);
-        changed();
-        return;
-      }
+        : `<img src="/thumb/${a.id}" alt="" loading="lazy" draggable="false">`) +
+      `<strong translate="no">${esc(a.name)}</strong><small><span>${format(a.duration).split(".")[0]}</span><span>${S.clips.filter((c) => c.assetId === a.id).length}×</span></small></button>
+      <button type="button" class="asset-preview" title="Quellvorschau öffnen" aria-label="Quellvorschau öffnen">▷</button>
+      <button type="button" class="asset-add" title="In Timeline einsetzen" aria-label="In Timeline einsetzen">＋</button>`;
+    const selectSource = () => {
+      selectedInstrument = null;
       selectedAsset = a.id;
       selected = [];
-      sourcePreview(a);
       showPanel("clip");
-      renderLibrary();
+      // Keep the card in the DOM so focus, double-click and dragging stay stable.
+      document.querySelectorAll(".asset").forEach(el =>
+        el.classList.toggle("selected", el.dataset.asset === a.id));
       renderInspector();
       renderSelection();
+      handleKey = "";
     };
-    item.ondblclick = () => {
+    const addSource = () => {
       snapshot();
       insertAsset(a);
       changed();
+    };
+    item.querySelector(".asset-select").onclick = selectSource;
+    item.querySelector(".asset-select").ondblclick = addSource;
+    item.querySelector(".asset-add").onclick = addSource;
+    item.querySelector(".asset-preview").onclick = () => {
+      selectSource();
+      sourcePreview(a);
     };
     item.ondragstart = (e) => {
       e.dataTransfer.setData("application/x-flightstudio-asset", a.id);
@@ -680,9 +685,20 @@ function renderLibrary() {
   $("export-kml").hidden = !S.flight;
   renderFlightOverlays();
 }
+function closeSourcePreview() {
+  const dialog = $("source-preview");
+  if (dialog.open) dialog.close();
+  for (const kind of ["video", "audio", "photo"]) {
+    const el = $("source-" + kind);
+    el.pause?.();
+    if (el.hasAttribute("src")) {
+      el.removeAttribute("src");
+      el.load?.();
+    }
+  }
+}
 function sourcePreview(a) {
   app.pause();
-  $("source-preview").hidden = false;
   $("source-name").textContent = a.name;
   for (const kind of ["video", "photo", "audio"]) {
     const el = $("source-" + kind);
@@ -690,6 +706,7 @@ function sourcePreview(a) {
     el.hidden = kind !== a.type;
     if (kind === a.type) el.src = a.url;
   }
+  $("source-preview").showModal();
 }
 function timelineSpan() { return Math.max(10, viewTime(duration()) + Math.min(5, viewTime(duration()) * .03)); }
 function renderRuler() {
@@ -1602,9 +1619,11 @@ function wire() {
     showGallery("flights");
   });
   $("demo").onclick = $("demo-project").onclick = safe(async () => attachFlight(await app.api("/api/demo")));
-  $("source-close").onclick = () => {
-    ["source-video", "source-audio"].forEach((id) => $(id).pause());
-    $("source-preview").hidden = true;
+  $("source-close").onclick = closeSourcePreview;
+  $("source-preview").oncancel = (event) => { event.preventDefault(); closeSourcePreview(); };
+  // Release playback and media resources on every dialog close.
+  $("source-preview").onclose = () => {
+    if (!$("source-preview").open) closeSourcePreview();
   };
   $("insert-source").onclick = () => {
     const a = S.assets.find((a) => a.id === selectedAsset);
@@ -1631,8 +1650,7 @@ function wire() {
       return;
     }
     if (!duration()) return;
-    $("source-video").pause();
-    $("source-audio").pause();
+    closeSourcePreview();
     await engine.enableAudio();
     if (app.time >= duration()) app.time = 0;
     app.playing = true;
@@ -2003,6 +2021,7 @@ function wire() {
     if (
       app.exporting || tutorial?.active ||
       /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) ||
+      $("source-preview").open ||
       $("help-dialog").open ||
       $("export-dialog").open
     )
@@ -2188,7 +2207,6 @@ async function init() {
       return false;
     },
     captureUI: () => ({ gallery: activeGallery, panel: activePanel,
-      sourceHidden: $("source-preview").hidden,
       details: [...document.querySelectorAll('.library details,.inspector details')].map(el => [el, el.open]) }),
     prepareUI: step => {
       if (activeGallery !== step.gallery) showGallery(step.gallery);
@@ -2199,7 +2217,6 @@ async function init() {
     restoreUI: ui => {
       if (!ui) return;
       showGallery(ui.gallery); showPanel(ui.panel);
-      $("source-preview").hidden = ui.sourceHidden;
       for (const [el, open] of ui.details) if (el.isConnected) el.open = open;
     },
   });

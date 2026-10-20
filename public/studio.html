@@ -90,26 +90,6 @@
           </details>
         </div>
         </section>
-        <div id="source-preview" hidden>
-          <div class="section-heading">
-            <h3 id="source-name" translate="no"></h3>
-            <button
-              id="source-close"
-              class="icon"
-              aria-label="Quellvorschau schliessen"
-            >
-              ×
-            </button>
-          </div>
-          <video id="source-video" controls playsinline></video
-          ><img id="source-photo" alt="Quellfoto" /><audio
-            id="source-audio"
-            controls
-          ></audio
-          ><button id="insert-source" class="primary">
-            An Abspielposition einsetzen ＋
-          </button>
-        </div>
       </aside>
       <section class="viewer">
         <div class="viewer-heading">
@@ -400,6 +380,19 @@
         </footer>
       </section>
     </main>
+    <dialog id="source-preview" aria-labelledby="source-preview-title" aria-describedby="source-preview-hint">
+      <div class="section-heading">
+        <div><span id="source-preview-title" class="eyebrow">QUELLVORSCHAU</span><h3 id="source-name" translate="no"></h3></div>
+        <button id="source-close" type="button" class="icon" aria-label="Quellvorschau schliessen" autofocus>×</button>
+      </div>
+      <div class="source-screen">
+        <video id="source-video" controls playsinline preload="metadata" hidden></video>
+        <img id="source-photo" alt="Quellfoto" hidden />
+        <audio id="source-audio" controls preload="metadata" hidden></audio>
+      </div>
+      <p id="source-preview-hint" class="hint">Originalmedium ansehen. Die Timeline bleibt pausiert. Esc schliesst die Vorschau.</p>
+      <button id="insert-source" type="button" class="primary">An Abspielposition einsetzen ＋</button>
+    </dialog>
     <div
       id="map-source"
       style="
