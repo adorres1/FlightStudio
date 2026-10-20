@@ -2,7 +2,7 @@
 
 [English guide](GUIDE.en.md) · [Windows-Download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-Für FlightStudio 2.4.1. In der App: **Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
+Für FlightStudio 2.5.0. In der App: **Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
 
 Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich durchsuchen. Nur Online-Karten und Gelände brauchen eine Verbindung.
 
@@ -21,6 +21,8 @@ Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich dur
 - [9 · Ton, Ein-/Ausblenden und Übergänge](#effects)
 - [10 · Sichern und auf einen anderen Laptop wechseln](#save)
 - [11 · Exportieren](#export)
+- [Updates suchen und installieren](#updates)
+- [Exporttempo und Beschleunigung](#performance)
 - [12 · Wenn etwas nicht wie erwartet aussieht](#trouble)
 
 <a id="start"></a>
@@ -152,6 +154,26 @@ Der Export verwendet den markierten Bereich. Für den ganzen Film zuerst Bereich
 Die Desktop-App unterstützt bis 4K und 60 fps. Ein Hintergrundexport kann weiterlaufen, wenn das Editorfenster geschlossen ist. Rechner und FlightStudio-Hintergrundprozess müssen an bleiben; vollständig Beenden oder Ruhezustand unterbricht die Arbeit. Eine reine Browser-Aufzeichnung benötigt einen sichtbaren Tab und hat weniger Exportoptionen.
 
 Während des Hintergrundexports wird der Projektstand vom Exportstart verwendet. Spätere Bearbeitungen ändern diesen laufenden Export nicht. Fertige Dateien erscheinen im Exportfenster. Kartenanbieter benötigen eine Internetverbindung.
+
+<a id="updates"></a>
+
+## Updates suchen und installieren
+
+Oben auf Updates klicken. „Updates suchen“ prüft das neueste stabile FlightStudio-Release auf GitHub. Eine neuere Version wird als „Update verfügbar“ hervorgehoben. Die automatische Suche beim Start ist voreingestellt, höchstens einmal täglich, und lässt sich im selben Fenster ausschalten. Ohne Internet wird eine fehlgeschlagene Prüfung angezeigt, keine falsche Entwarnung.
+
+In der Desktop-App: „Herunterladen und installieren“ lädt den Windows-Installer, prüft Dateigrösse und SHA-256-Prüfsumme, speichert den aktuellen Projektstand und öffnet die Installation. Danach schliesst FlightStudio. Den Windows-Installationsschritten folgen und die App anschliessend wieder öffnen. Während eines Exports ist die Installation gesperrt. Windows-Bestätigungen und Sicherheitsprüfungen bleiben bestehen.
+
+Der Download lässt sich abbrechen. Bei der portablen Ausgabe installiert dieser Knopf die App regulär; Daten bleiben im selben Windows-Benutzerprofil. In der Browser-Oberfläche öffnet sich stattdessen die Downloadseite. Versionen vor 2.5.0 müssen einmal manuell aktualisiert werden, weil sie diesen Update-Knopf noch nicht enthalten. Bei der Suche werden keine Projekte, Flugdaten oder Medien hochgeladen.
+
+<a id="performance"></a>
+
+## Exporttempo und Beschleunigung
+
+Der Desktop-Export liest Videos ab 2.5.0 mit FFmpeg fortlaufend und verwendet die Original-Zeitstempel. Schnitte, variable Bildraten, Zeitlupe und mehrere Kameras werden dabei berücksichtigt. Die 3D-Karte und Instrumente werden weiterhin für jeden Ausgabemoment berechnet. Nur wenige Videobilder werden vorausgeladen; der ganze Film wird nicht in den Arbeitsspeicher geladen.
+
+Unter Exportieren → Beschleunigung ist „Automatisch (GPU, falls verfügbar)“ voreingestellt. MP4 prüft AMD-, NVIDIA- und Intel-Encoding mit der gewählten Auflösung und Bildrate. Ohne funktionierenden GPU-Encoder wird die CPU verwendet. Der tatsächlich verwendete Encoder steht beim Fortschritt. „CPU (Kompatibilität)“ erzwingt die Software-Ausgabe, falls ein Grafiktreiber Probleme macht. GPU-Encoding kann bei gleicher Qualitätsstufe grössere Dateien ergeben.
+
+WebM verwendet VP9 auf der CPU und wird nur einmal kodiert. MP4 ist für einen schnellen Export meist die passendere Wahl. Die Dauer hängt auch von Originalauflösung, mehreren Videos, Gelände, Zoom und Ausgabebildrate ab. Eine geringere Vorschauqualität verändert die Exportauflösung nicht. Der neue Dekoder beschleunigt den Desktop-Export; die reine Browser-Aufzeichnung verwendet weiterhin die Vorschau.
 
 <a id="trouble"></a>
 

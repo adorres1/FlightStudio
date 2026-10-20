@@ -1,6 +1,6 @@
 {
   "name": "flight-studio-v2",
-  "version": "2.4.1",
+  "version": "2.5.0",
   "private": true,
   "type": "module",
   "description": "Lokales 3D-Flugstudio mit IGC, Videos, Fotos und MP4-Export",
@@ -37,7 +37,7 @@
     "appId": "ch.flightstudio.v2",
     "productName": "FlightStudio V2",
     "directories": {
-      "output": "release/desktop-2.4.1",
+      "output": "release/desktop-2.5.0",
       "buildResources": "desktop"
     },
     "asar": true,

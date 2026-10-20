@@ -35,7 +35,7 @@ function content(ctx, c, r, elements, map) {
     String(c.text || 'Dein Titel').split('\n').forEach((line, i, lines) =>
       ctx.fillText(line, x+rw/2, y+rh/2+(i-(lines.length-1)/2)*size*1.25, rw*.96));
   } else {
-    const el = elements.get(c.id)?.el, iw = el?.videoWidth || el?.naturalWidth, ih = el?.videoHeight || el?.naturalHeight;
+    const el = elements.get(c.id)?.el, iw = el?.videoWidth || el?.naturalWidth || el?.width, ih = el?.videoHeight || el?.naturalHeight || el?.height;
     if (iw && ih) {
       const image = imagePlacement(c, {x,y,w:rw,h:rh}, iw, ih);
       ctx.fillStyle = '#102027'; ctx.fillRect(x,y,rw,rh);

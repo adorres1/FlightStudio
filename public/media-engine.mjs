@@ -59,6 +59,20 @@ export class MediaEngine {
     this.connect(item);
     return item;
   }
+  async prepareExport(state, time, load) {
+    const clips = state.clips.filter(c => c.kind === "video" && active(c,time) &&
+      state.tracks.some(t => t.id === c.trackId && t.visible));
+    for (const [id,item] of this.elements) if (item.native && !clips.some(c => c.id === id)) {
+      item.el.close();this.elements.delete(id);
+    }
+    await Promise.all(clips.map(async c => {
+      const blob = await load(c.id), bitmap = await createImageBitmap(blob);
+      const previous = this.elements.get(c.id);
+      if (previous?.native) previous.el.close();
+      else if (previous) { previous.el.pause?.();previous.el.removeAttribute("src");previous.el.load?.(); }
+      this.elements.set(c.id, {el:bitmap,kind:"video",assetId:c.assetId,native:true});
+    }));
+  }
   sync(state, time, playing, speed, wait = false) {
     let hold = false;
     const activeIds = new Set();
@@ -71,7 +85,10 @@ export class MediaEngine {
       if (!asset) continue;
       const track = tracks.get(c.trackId);
       if (!track || (!track.visible && c.kind === "photo")) continue;
+      // Native exports mix audio separately; hidden video needs no decoding.
+      if (this.silent && (c.kind === "audio" || !track.visible)) continue;
       activeIds.add(c.id);
+      if (this.silent && c.kind === "video") { hold ||= !this.elements.get(c.id)?.native; continue; }
       const item = this.get(c, asset),
         el = item.el;
       if (item.error) continue;
@@ -131,6 +148,7 @@ export class MediaEngine {
     for (const [id, item] of this.elements)
       if (!ids.has(id)) {
         item.el.pause?.();
+        if (item.native) { item.el.close();this.elements.delete(id);continue; }
         item.el.removeAttribute("src");
         item.el.load?.();
         item.source?.disconnect();

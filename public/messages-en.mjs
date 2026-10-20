@@ -1,4 +1,7 @@
 export const english = {
+  "Beschleunigung": "Acceleration",
+  "Automatisch (GPU, falls verfügbar)": "Automatic (GPU if available)",
+  "CPU (Kompatibilität)": "CPU (compatibility)",
   "Quellvorschau öffnen": "Open source preview",
   "QUELLVORSCHAU": "SOURCE PREVIEW",
   "Originalmedium ansehen. Die Timeline bleibt pausiert. Esc schliesst die Vorschau.": "View the original media. The timeline stays paused. Press Esc to close the preview.",

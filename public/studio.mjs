@@ -37,6 +37,7 @@ import { MediaEngine } from "./media-engine.mjs";
 import { drawFrame } from "./compositor.mjs";
 import { RecorderExporter } from "./export-v2.mjs";
 import { BackgroundExporter } from "./background-export.mjs";
+import { installUpdates } from "./updates.mjs";
 import { renderExport } from "./render-export.mjs";
 import { pixelSize } from "/lib/export-settings.mjs";
 import { installLanguageUI, getLanguage, translate as t } from "./i18n.mjs";
@@ -212,12 +213,12 @@ app.toast = (text, error = false) => {
   toastTimer = setTimeout(() => (el.hidden = true), error ? 13000 : 5500);
 };
 app.api = async (url, opts = {}) => {
-  const { raw, ...options } = opts,
+  const { raw, binary, ...options } = opts,
     headers = { "X-FlightStudio-Token": token, ...options.headers };
   if (options.body && !(options.body instanceof FormData) && !raw)
     headers["Content-Type"] = "application/json";
   const r = await fetch(url, { ...options, headers }),
-    data = await r.json();
+    data = r.ok && binary ? await r.blob() : await r.json();
   if (!r.ok) throw new Error(data.error || "Aktion fehlgeschlagen.");
   return data;
 };
@@ -541,12 +542,14 @@ function flightThumbnail(flight, color) {
   const last = positions.at(-1).split(",");
   return `<svg class="flight-thumbnail" viewBox="0 0 220 94" aria-hidden="true"><path d="M0 23.5H220M0 47H220M0 70.5H220M55 0V94M110 0V94M165 0V94" class="thumbnail-grid"/><polyline points="${positions.join(" ")}" fill="none" stroke="${esc(color)}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${esc(color)}"/></svg>`;
 }
+let renderedMapTime = null;
 app.render = () => {
   if (!map) return false;
   Object.assign(app, effectScene(S.clips, S.tracks, app.time, S.layout));
   const fc = app.layers.find((c) => c.kind === "flight");
   let waiting = false;
-  if (fc && S.flight) {
+  const mapFrameKey = `${app.time}:${app.canvas.width}:${app.canvas.height}:${fc?.id}`;
+  if (fc && S.flight && (!renderJob || renderedMapTime !== mapFrameKey || !map.ready)) {
     const r = app.rects.get(fc.id);
     map.resize(app.canvas.width * r.w, app.canvas.height * r.h);
     map.heading = S.map.heading;
@@ -564,6 +567,7 @@ app.render = () => {
       },
     );
     waiting = !map.ready;
+    if (renderJob && !waiting) renderedMapTime = mapFrameKey;
   }
   const hold = engine.sync(
     S,
@@ -573,6 +577,7 @@ app.render = () => {
     app.exporting && (waiting || document.hidden || exporter.pending > 8),
   );
   if (hold) engine.pause();
+  if (renderJob && (hold || waiting)) return true;
   drawFrame(app.canvas.getContext("2d"), {
     state: S,
     layers: app.layers,
@@ -584,6 +589,7 @@ app.render = () => {
     flightClip: fc,
     language: renderJob ? S.uiLanguage || "de" : getLanguage(),
   });
+  if (renderJob) return false;
   $("clock").textContent =
     format(viewTime(app.time)) + " / " + format(viewTime(duration()));
   $("auto-speed-status").textContent =
@@ -1987,6 +1993,7 @@ function wire() {
         size: Number($("export-size").value),
         fps: Number($("export-fps").value),
         quality: $("export-quality").value,
+        acceleration: $("export-acceleration").value,
         audio: $("export-audio").checked,
       });
     } catch (e) {
@@ -2023,7 +2030,7 @@ function wire() {
       /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) ||
       $("source-preview").open ||
       $("help-dialog").open ||
-      $("export-dialog").open
+      $("export-dialog").open || $("updates-dialog")?.open
     )
       return;
     const key = e.key.toLowerCase();
@@ -2163,6 +2170,7 @@ async function init() {
     for (const option of $("export-size").options) option.disabled = Number(option.value) > 1080;
     $("export-fps").disabled = true;
     $("export-quality").disabled = true;
+    $("export-acceleration").disabled = true;
     $("export-fps").title = $("export-quality").title = "Weitere Exportoptionen benötigen die Desktop-App.";
   }
   $("export-hint").textContent = status.backgroundExport
@@ -2178,9 +2186,12 @@ async function init() {
     app.range = scene.range;
     renderRange();
     busy(false);
+    app.prepareExportFrame = frame => engine.prepareExport(S, app.time, clipId =>
+      app.api(`/api/exports/${renderJob}/media-frame`, {method:"POST", binary:true, body:JSON.stringify({clipId,frame})}));
     await renderExport(app, scene, renderJob);
     return;
   }
+  void installUpdates(app).catch(() => {});
   const saved = await app.api("/api/project");
   if (saved?.version) {
     try {

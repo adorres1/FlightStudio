@@ -9,6 +9,7 @@ import {pipeline} from 'node:stream/promises';
 import Busboy from 'busboy';
 import exifr from 'exifr';
 import ffmpegPath from 'ffmpeg-static';
+import { UpdateService } from './lib/updates.mjs';
 import { ExportJobs } from './lib/export-jobs.mjs';
 const ffmpeg=ffmpegPath?.replace('app.asar', 'app.asar.unpacked');
 import ffprobe from 'ffprobe-static';
@@ -24,6 +25,9 @@ let PORT=Number(process.env.PORT||4187);
 const TOKEN=randomBytes(24).toString('hex'),thumbnails=new Map();
 export const exportJobs=new ExportJobs(EXPORTS,ffmpeg,getMedia);
 await exportJobs.init();
+const APP_VERSION=JSON.parse(await fsp.readFile(path.join(ROOT,'package.json'),'utf8')).version;
+export const updates=new UpdateService(DATA,APP_VERSION);
+await updates.init();
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.avif':'image/avif','.mp4':'video/mp4','.mp3':'audio/mpeg','.wav':'audio/wav','.m4a':'audio/mp4','.aac':'audio/aac','.ogg':'audio/ogg','.flac':'audio/flac','.mov':'video/quicktime','.webm':'video/webm','.woff2':'font/woff2','.wasm':'application/wasm','.gif':'image/gif','.ico':'image/x-icon'};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const json=(res,status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};
@@ -84,7 +88,10 @@ export const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`),route=url.pathname;
   if(!['GET','HEAD'].includes(req.method)&&req.headers['x-flightstudio-token']!==TOKEN){json(res,403,{error:'Bitte die Anwendung neu laden.'});return;}
   try{
-    if(req.method==='GET'&&route==='/api/status'){json(res,200,{app:'FlightStudioV2',version:'2.4.1',backgroundExport:Boolean(exportJobs.launch),desktop:Boolean(process.versions.electron),token:TOKEN,ffmpeg:Boolean(ffmpeg&&fs.existsSync(ffmpeg)),dataPath:DATA});return;}
+    if(req.method==='GET'&&route==='/api/status'){json(res,200,{app:'FlightStudioV2',version:APP_VERSION,backgroundExport:Boolean(exportJobs.launch),desktop:Boolean(process.versions.electron),token:TOKEN,ffmpeg:Boolean(ffmpeg&&fs.existsSync(ffmpeg)),dataPath:DATA});return;}
+    if(req.method==='GET'&&route==='/api/updates'){json(res,200,updates.state());return;}
+    if(req.method==='POST'&&route==='/api/updates/check'){const input=await readJSON(req);if(typeof input.manual!=='boolean')throw new Error('Invalid update request');json(res,200,await updates.check(input.manual));return;}
+    if(req.method==='POST'&&route==='/api/updates/preferences'){json(res,200,await updates.setAutomatic((await readJSON(req)).automatic));return;}
     if(req.method==='GET'&&route==='/api/demo'){json(res,200,demoFlight());return;}
     if(req.method==='POST'&&route==='/api/flight'){
       const info=await upload(req,50*1024**2);try{
@@ -111,6 +118,11 @@ export const server=http.createServer(async(req,res)=>{
     }
     if(route==='/api/exports'&&req.method==='GET'){json(res,200,exportJobs.list());return;}
     if(route==='/api/exports'&&req.method==='POST'){json(res,200,await exportJobs.create(await readJSON(req)));return;}
+    if(route.startsWith('/api/exports/')&&route.endsWith('/media-frame')&&req.method==='POST'){
+      const id=route.split('/')[3],input=await readJSON(req);
+      const jpeg=await exportJobs.mediaFrame(id,input.clipId,input.frame);
+      res.writeHead(200,{'Content-Type':'image/jpeg','Content-Length':jpeg.length,'Cache-Control':'no-store'});res.end(jpeg);return;
+    }
     const match=route.match(/^\/api\/exports\/([0-9a-f-]+)(?:\/(scene|progress|fail|finish|cancel|file|chunks\/\d+|frames\/\d+))?$/);
     if(match){
       const job=exportJobs.get(match[1]), action=match[2];

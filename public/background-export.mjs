@@ -53,7 +53,7 @@ export class BackgroundExporter {
       $("export-progress").hidden = false;
       $("export-progress").value = current.progress;
       $("export-status").textContent =
-        `${labels[current.status]}${running(current) ? ` · ${Math.round(current.progress * 100)} % · Du kannst dieses Fenster schliessen.` : ""}${current.error ? ": " + current.error : ""}`;
+        `${labels[current.status]}${running(current) ? ` · ${Math.round(current.progress * 100)} % · Du kannst dieses Fenster schliessen.` : ""}${current.encoderLabel ? " · " + current.encoderLabel : ""}${current.error ? ": " + current.error : ""}`;
       const link = $("export-download");
       link.hidden = !current.url;
       if (current.url) {

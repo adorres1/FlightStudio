@@ -9,6 +9,7 @@ const {
   Notification,
   powerSaveBlocker,
   ipcMain,
+  net,
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
@@ -328,6 +329,29 @@ if (workerUrl) {
       );
       manager = backend.exportJobs;
       baseUrl = await backend.ready;
+      const { UpdateInstaller } = await import(pathToFileURL(path.join(root, "lib", "update-installer.mjs")).href);
+      const network = (url, options) => net.fetch(url, { ...options, credentials: "omit" });
+      backend.updates.fetch = network;
+      const installer = new UpdateInstaller({
+        directory: path.join(app.getPath("userData"), "updates"), updates: backend.updates,
+        // Node fetch exposes redirect responses so every download host can be checked.
+        openFile: file => shell.openPath(file),
+        isExporting: () => manager.active.length > 0 || manager.creating,
+      });
+      const updateHandler = (name, action) => ipcMain.handle("flightstudio:updates:" + name, (event) => {
+        if (!fromEditor(event)) throw new Error("Invalid update request");
+        return action();
+      });
+      updateHandler("info", () => ({ portable: Boolean(process.env.PORTABLE_EXECUTABLE_FILE) }));
+      updateHandler("status", () => installer.state());
+      updateHandler("download", () => installer.download());
+      updateHandler("cancel", () => installer.cancel());
+      updateHandler("install", async () => {
+        const result = await installer.install();
+        // Only quit after Windows successfully accepted the verified installer.
+        setTimeout(() => { quitting = true; app.quit(); }, 500);
+        return result;
+      });
       manager.launch = async (id) => {
         const win = renderer(
           baseUrl + "/?renderJob=" + id,

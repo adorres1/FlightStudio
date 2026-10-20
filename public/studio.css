@@ -1453,3 +1453,15 @@ body.drag-files .studio {
 .zoom { flex-wrap: wrap; }
 [data-theme="dark"] .effect-section { background: #1b252d; }
 [data-theme="dark"] .clip-gain { border-color: #77b9e5; }
+
+#updates-dialog { width: min(620px, calc(100vw - 40px)); }
+#updates-dialog .dialog-heading, #updates-dialog .dialog-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+#updates-dialog .dialog-heading { justify-content: space-between; }
+#updates-dialog p { line-height: 1.55; }
+#updates-dialog progress { width: 100%; margin-bottom: 16px; }
+#updates-dialog .dialog-actions { margin-top: 20px; }
+#updates-dialog .hint { font-size: 13px; opacity: .8; }
+#updates-open.has-update { color: #166534; background: #dcfce7; border-color: #86efac; }
+
+#updates-dialog .check { display: flex; flex-direction: row; align-items: center; gap: 10px; margin: 18px 0; text-align: left; }
+#updates-dialog .check input { width: auto; margin: 0; flex: 0 0 auto; }

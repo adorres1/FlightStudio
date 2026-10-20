@@ -2,7 +2,7 @@
 
 [Deutsche Anleitung](ANLEITUNG.de.md) · [Windows download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-For FlightStudio 2.4.1. In the app: **Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
+For FlightStudio 2.5.0. In the app: **Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
 
 The searchable in-app guide works offline. Online map and terrain layers need a connection.
 
@@ -21,6 +21,8 @@ The searchable in-app guide works offline. Online map and terrain layers need a 
 - [9 · Audio, fades and transitions](#effects)
 - [10 · Saving and moving to another laptop](#save)
 - [11 · Exporting](#export)
+- [Checking for and installing updates](#updates)
+- [Export speed and acceleration](#performance)
 - [12 · When something looks wrong](#trouble)
 
 <a id="start"></a>
@@ -152,6 +154,26 @@ Export uses the selected range. Choose Range → All for the whole film. Export 
 The desktop app supports up to 4K and 60 fps. Background export can continue after closing the editor window. Keep the computer and FlightStudio background process running; fully quitting or sleeping interrupts the work. Browser recording requires a visible tab and has fewer export options.
 
 Background export uses the project snapshot taken at export start. Later edits do not change that running export. Finished files appear in the export window. Map providers require an internet connection.
+
+<a id="updates"></a>
+
+## Checking for and installing updates
+
+Click Updates in the header. “Check for updates” checks the latest stable FlightStudio release on GitHub. A newer version highlights the “Update available” button. Automatic startup checks are enabled by default, at most once daily, and can be disabled in the same window. An offline check reports a failure, not a false up-to-date result.
+
+In the desktop app, “Download and install” downloads the Windows installer, verifies its size and SHA-256 checksum, saves the current project and opens installation. FlightStudio then closes. Follow the Windows installer and reopen the app afterwards. Installation is blocked during export. Windows confirmations and security checks remain in place.
+
+Downloads can be cancelled. From the portable edition, this button installs the app normally; data stays in the same Windows user profile. The browser interface opens the download page instead. Versions before 2.5.0 need one manual update because they do not yet have this button. Checks do not upload projects, flight data or media.
+
+<a id="performance"></a>
+
+## Export speed and acceleration
+
+From 2.5.0, desktop export reads videos sequentially with FFmpeg using their original timestamps, accounting for cuts, variable frame rates, slow motion and multiple cameras. The 3D map and instruments are still rendered for each output moment. Only a bounded number of frames are read ahead; the whole movie is not loaded into memory.
+
+Export → Acceleration defaults to “Automatic (GPU if available)”. MP4 probes AMD, NVIDIA and Intel encoding at the selected resolution and frame rate. If no GPU encoder works, it uses the CPU. The progress display shows the selected encoder. “CPU (compatibility)” forces software encoding if a graphics driver causes problems. GPU encoding may produce larger files at the same quality setting.
+
+WebM uses CPU VP9 and encodes video only once. MP4 is usually the better choice for a fast export. Source resolution, multiple videos, terrain, zoom and output frame rate also affect duration. Preview quality does not change export resolution. The new decoder accelerates desktop export; browser recording still uses the preview.
 
 <a id="trouble"></a>
 
