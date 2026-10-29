@@ -46,3 +46,7 @@ desktop.ini
 .vscode/
 .codex/
 .agents/
+
+# Selected application branding, not user media.
+!public/app-icon.png
+!public/favicon.png

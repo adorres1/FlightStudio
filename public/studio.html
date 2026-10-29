@@ -4,11 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>FlightStudio V2 · Schnittwerkstatt</title>
-    <link rel="icon" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
     <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
     <link rel="stylesheet" href="/studio.css" />
     <link rel="stylesheet" href="/tutorial.css" />
     <link rel="stylesheet" href="/instruments.css" />
+    <link rel="stylesheet" href="/app-menu.css" />
     <script type="importmap">
       { "imports": { "luxon": "/vendor/luxon.js" } }
     </script>
@@ -19,31 +20,41 @@
     <script type="module" src="/studio.mjs"></script>
   </head>
   <body>
+    <nav id="app-menubar" class="app-menubar" aria-label="Hauptmenü">
+      <details><summary>Datei</summary><div class="menu-popup">
+        <button id="new-project"><span>Neues Projekt</span><kbd>Ctrl+N</kbd></button>
+        <button id="open-project"><span>Projekt öffnen …</span><kbd>Ctrl+O</kbd></button>
+        <button id="save-project"><span>Projekt sichern</span><kbd>Ctrl+S</kbd></button><hr>
+        <button data-command="import-media">Medien importieren …</button>
+        <button data-command="import-flight">Flüge (IGC) hinzufügen …</button><hr>
+        <button id="panel-project" aria-controls="inspector" aria-expanded="false">Projekt-Einstellungen</button>
+        <button data-command="export-open"><span>Exportieren …</span><kbd>Ctrl+E</kbd></button>
+      </div></details>
+      <details><summary>Ansicht</summary><div class="menu-popup">
+        <label>Sprache / Language<select id="language" aria-label="Sprache / Language"><option value="de">Deutsch</option><option value="en">English</option></select></label>
+        <label>Erscheinungsbild<select id="theme" aria-label="Erscheinungsbild"><option value="light">☀ Hell</option><option value="dark">☾ Dunkel</option></select></label>
+      </div></details>
+      <details><summary>Hilfe</summary><div class="menu-popup">
+        <button id="help" aria-label="Tutorial und Anleitung"><span>Tutorial & Hilfe</span><kbd>F1</kbd></button>
+        <button id="updates-menu" data-command="updates-open">Updates suchen</button>
+      </div></details>
+    </nav>
     <header class="topbar">
-      <a class="brand" href="/"
-        ><b>↗</b><span>FLIGHTSTUDIO <small>V2</small></span></a
-      >
+      <div class="brand" id="brand" tabindex="-1"><img src="/favicon.png" width="36" height="36" alt="" /><span>FLIGHTSTUDIO <small>V2</small></span></div>
       <div class="project-title">
-        <input
-          id="project-name"
-          aria-label="Projektname"
-          value="Mein Flugfilm"
-        /><span id="save-state">Lokal auf deinem Laptop</span>
+        <input id="project-name" aria-label="Projektname" value="Mein Flugfilm" /><span id="save-state">Lokal auf deinem Laptop</span>
       </div>
       <div class="top-actions">
-        <button id="gallery-media" aria-controls="library" aria-expanded="true" class="active">Medien</button>
-        <button id="gallery-flights" aria-controls="library" aria-expanded="false">Flüge</button>
-        <button id="panel-clip" aria-controls="inspector" aria-expanded="false">Clip</button>
-        <button id="panel-camera" aria-controls="inspector" aria-expanded="false">Flugkarte & Kamera</button>
-        <button id="panel-instruments" aria-controls="inspector" aria-expanded="false">Instrumente</button>
-        <button id="panel-project" aria-controls="inspector" aria-expanded="false">Projekt-Einstellungen</button>
-        <select id="language" aria-label="Sprache / Language"><option value="de">Deutsch</option><option value="en">English</option></select>
-        <select id="theme" aria-label="Erscheinungsbild"><option value="light">☀ Hell</option><option value="dark">☾ Dunkel</option></select>
-        <button id="new-project">Neu</button
-        ><button id="open-project">Öffnen</button
-        ><button id="save-project">Projekt sichern</button
-        ><button id="help" aria-label="Tutorial und Anleitung">Tutorial & Hilfe</button
-        ><button id="export-open" class="primary">Exportieren ↗</button>
+        <div class="toolbar-group" aria-label="Galerien">
+          <button id="gallery-media" aria-controls="library" aria-expanded="true" class="active">Medien</button>
+          <button id="gallery-flights" aria-controls="library" aria-expanded="false">Flüge (IGC)</button>
+        </div>
+        <div class="toolbar-group" aria-label="Werkzeuge">
+          <button id="panel-clip" aria-controls="inspector" aria-expanded="false">Clip</button>
+          <button id="panel-camera" aria-controls="inspector" aria-expanded="false">Flugkarte & Kamera</button>
+          <button id="panel-instruments" aria-controls="inspector" aria-expanded="false">Instrumente</button>
+        </div>
+        <button id="export-open" class="primary">Exportieren ↗</button>
       </div>
     </header>
     <main class="studio">
@@ -80,7 +91,7 @@
           <p id="flight-info">IGC · KML · KMZ – auch später ergänzen</p>
           <button id="export-kml" hidden>Flug als KML sichern ↓</button>
           <details id="flight-collection" open hidden>
-            <summary>Flüge in dieser Karte <span id="flight-count">0</span></summary>
+            <summary>Flüge (IGC) in dieser Karte <span id="flight-count">0</span></summary>
             <p class="hint">
               Der Hauptflug bestimmt die Zeit der Karte. Weitere Spuren liegen
               in derselben Ansicht.
@@ -122,15 +133,15 @@
             ></canvas>
             <div id="handles"></div>
             <div id="empty-stage">
-              <span>↗</span>
+              <img class="empty-logo" src="/app-icon.png" alt="" width="72" height="72" />
               <h1>Deine Bilder. Dein Flug. Dein Film.</h1>
               <p>
                 Videos, Fotos oder Musik importieren.<br />Eine Flugspur kannst
                 du jederzeit ergänzen.
               </p>
-              <button id="empty-import" class="primary">
+              <div class="empty-actions"><button id="empty-import" class="primary">
                 Material auswählen</button
-              ><button id="demo-project">Demoflug</button>
+              ><button id="demo-project">Beispielprojekt öffnen</button></div>
               <div><button id="empty-tutorial">Tutorial starten →</button></div>
             </div>
           </div>

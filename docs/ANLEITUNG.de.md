@@ -2,7 +2,7 @@
 
 [English guide](GUIDE.en.md) · [Windows-Download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-Für FlightStudio 2.5.0. In der App: **Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
+Für FlightStudio 2.5.1. In der App: **Hilfe → Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
 
 Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich durchsuchen. Nur Online-Karten und Gelände brauchen eine Verbindung.
 
@@ -16,9 +16,10 @@ Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich dur
 - [5 · Tempo und lange Abschnitte ohne Video](#speed)
 - [6 · Layout, Bild-in-Bild und Bildzoom](#layout)
 - [7 · Karte mit der Maus und Kamerafahrten](#camera)
-- [8 · Mehrere Flüge, Namen und Daten](#multiple)
+- [8 · Mehrere Flüge (IGC), Namen und Daten](#multiple)
 - [Instrumente: Kompass, Vario und IGC-Werte](#instruments)
 - [9 · Ton, Ein-/Ausblenden und Übergänge](#effects)
+- [Hauptmenü und Oberfläche](#menus)
 - [10 · Sichern und auf einen anderen Laptop wechseln](#save)
 - [11 · Exportieren](#export)
 - [Updates suchen und installieren](#updates)
@@ -29,7 +30,7 @@ Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich dur
 
 ## 1 · Dein erster Flugfilm
 
-1. Unter Flüge → Flugdateien hinzufügen die IGC-Originaldatei importieren. Der Demoflug ist eine künstlich erzeugte Route zum Ausprobieren.
+1. Unter Flüge (IGC) → Flugdateien hinzufügen die IGC-Originaldatei importieren. Der Demoflug ist eine künstlich erzeugte Route zum Ausprobieren.
 2. Unter Medien → Importieren Videos, Fotos oder Ton laden. „Beim Import in Timeline einsetzen“ fügt sie direkt ein.
 3. Mit der Abspiellinie zu einem gut erkennbaren Moment gehen und prüfen, ob Video und Flug zusammenpassen. Clips bei Bedarf verschieben.
 4. Clips kürzen, das Projektlayout wählen und die Vorschau mit der Leertaste prüfen.
@@ -51,7 +52,7 @@ Die grosse Programmvorschau zeigt deinen geschnittenen Film mit Layout, Karte un
 
 Importiere den Hauptflug möglichst vor den Medien. Passende Aufnahmezeiten ordnen Clips entlang des Flugs ein. Gleichzeitig aufgenommene Videos erhalten getrennte Spuren. Ohne passende Zeit beginnt ein Clip an der aktuellen Abspiellinie. Die Zuordnung bleibt jederzeit von Hand veränderbar.
 
-IGC-Zeiten sind UTC. Unter Projekt-Einstellungen → Zeitzone der Aufnahmen legst du fest, wie Zeiten ohne eigene Zeitzone interpretiert werden. Beim ausgewählten Medienclip gibt es Aufnahmezeit und zeitliche Zuordnung. Prüfe die Vorschau nach einer Korrektur erneut.
+IGC-Zeiten sind UTC. Unter Datei → Projekt-Einstellungen → Zeitzone der Aufnahmen legst du fest, wie Zeiten ohne eigene Zeitzone interpretiert werden. Beim ausgewählten Medienclip gibt es Aufnahmezeit und zeitliche Zuordnung. Prüfe die Vorschau nach einer Korrektur erneut.
 
 Bei einem bereits geschnittenen Insta360-Export ist der Zeitstempel möglicherweise nicht mehr der ursprüngliche Aufnahmebeginn. Bereits entfernte Teile und Tempoänderungen kann FlightStudio nicht rekonstruieren. Nutze Originalaufnahmen oder teile und ordne den exportierten Clip von Hand zu.
 
@@ -63,7 +64,7 @@ Clip ziehen: Start verschieben. Clip-Ränder ziehen: kürzen. Strg-Klick: mehrer
 
 Einrasten ist eine Positionierungshilfe beim Verschieben: Der Clip-Anfang rastet an nahen Clip-Anfängen/-Enden, der Abspiellinie und bei 0 ein. N schaltet um; Alt beim Ziehen setzt es vorübergehend aus. Es verändert weder den Inhalt noch das Tempo eines Clips.
 
-Links an jeder Spur kannst du Sichtbarkeit, Ton und Sperre einstellen. × entfernt die Spur samt ihren Clips. Mit Strg + Z kannst du das rückgängig machen. Die Originaldateien bleiben erhalten. Medien und Flüge oben öffnen die Galerien; ein erneuter Klick oder × schliesst sie. Die Trennlinie über der Timeline verändert deren Höhe.
+Links an jeder Spur kannst du Sichtbarkeit, Ton und Sperre einstellen. × entfernt die Spur samt ihren Clips. Mit Strg + Z kannst du das rückgängig machen. Die Originaldateien bleiben erhalten. Medien und Flüge (IGC) oben öffnen die Galerien; ein erneuter Klick oder × schliesst sie. Die Trennlinie über der Timeline verändert deren Höhe.
 
 <a id="range"></a>
 
@@ -107,9 +108,9 @@ Die Kartenstile umfassen Satellit, Strassenkarte, Schwarzweiss-Relief und transp
 
 <a id="multiple"></a>
 
-## 8 · Mehrere Flüge, Namen und Daten
+## 8 · Mehrere Flüge (IGC), Namen und Daten
 
-Weitere IGC-Dateien unter Flüge hinzufügen. Der Hauptflug steuert die Karten-Timeline und das Kameraziel. Weitere Flüge erscheinen auf derselben Karte; du kannst sie nach UTC oder Flugbeginn vergleichen und einen Zeitversatz setzen.
+Weitere IGC-Dateien unter Flüge (IGC) hinzufügen. Der Hauptflug steuert die Karten-Timeline und das Kameraziel. Weitere Flüge (IGC) erscheinen auf derselben Karte; du kannst sie nach UTC oder Flugbeginn vergleichen und einen Zeitversatz setzen.
 
 Die Fluggalerie enthält Namen, Farben, Sichtbarkeit und Nametags. Jeder Flug hat einen passenden Farbpunkt bei seinen Zahlenwerten. Im Modus Fensterposition kannst du das gemeinsame Datenkästchen in der Vorschau verschieben und skalieren.
 
@@ -137,11 +138,19 @@ Timeline-Clip auswählen und Clip öffnen. Bei Video/Audio: 100 % entspricht dem
 
 Für Überblenden oder Wischen: Zwei passende Clips auf derselben Spur anordnen, den zweiten wählen und unter „Übergang vom vorherigen Clip“ Art und Dauer einstellen. „Übergang anwenden“ verschiebt diesen Clip in eine Überlappung. Andere Spuren bleiben stehen. Bei zeitlich synchronisiertem Material danach die Zuordnung prüfen.
 
+<a id="menus"></a>
+
+## Hauptmenü und Oberfläche
+
+Datei enthält Neues Projekt, Projekt öffnen, Projekt sichern, Medienimport, Flüge (IGC), Projekt-Einstellungen und Export. Die Desktop-App verwendet die Menüzeile ganz oben im Fenster; im Browser stehen Datei, Ansicht und Hilfe direkt über der Werkzeugleiste. Strg+N, Strg+O und Strg+S führen die Dateiaktionen direkt aus.
+
+Ansicht → Sprache / Language wechselt Deutsch/English. Ansicht → Erscheinungsbild wechselt Hell/Dunkel. Hilfe enthält Tutorial & Hilfe sowie Updates suchen. Ein verfügbares Update erscheint zusätzlich neben Exportieren. Medien, Flüge (IGC), Clip, Flugkarte & Kamera und Instrumente bleiben direkt in der Werkzeugleiste erreichbar.
+
 <a id="save"></a>
 
 ## 10 · Sichern und auf einen anderen Laptop wechseln
 
-Der aktuelle Arbeitsstand wird lokal automatisch gespeichert. „Projekt sichern“ erstellt zusätzlich eine .flightstudio-Datei. Sie enthält Bearbeitungsdaten und Flugspur, aber keine Originalvideos, Fotos oder Audiodateien. „Öffnen“ lädt ein Projekt. Vor Updates eine Projektdatei sichern.
+Der aktuelle Arbeitsstand wird lokal automatisch gespeichert. „Datei → Projekt sichern“ erstellt zusätzlich eine .flightstudio-Datei. Sie enthält Bearbeitungsdaten und Flugspur, aber keine Originalvideos, Fotos oder Audiodateien. „Datei → Projekt öffnen“ lädt ein Projekt. Vor Updates eine Projektdatei sichern.
 
 Für einen anderen Laptop: Projektdatei und Originalmedien mitnehmen. Fehlende Originalmedien dort importieren und danach die Projektdatei erneut öffnen. Die Medien möglichst unverändert mit ihren Dateinamen behalten. Eine installierte App und die portable EXE speichern Daten im Windows-Benutzerprofil unter %APPDATA%/FlightStudio-V2/data.
 
@@ -159,7 +168,7 @@ Während des Hintergrundexports wird der Projektstand vom Exportstart verwendet.
 
 ## Updates suchen und installieren
 
-Oben auf Updates klicken. „Updates suchen“ prüft das neueste stabile FlightStudio-Release auf GitHub. Eine neuere Version wird als „Update verfügbar“ hervorgehoben. Die automatische Suche beim Start ist voreingestellt, höchstens einmal täglich, und lässt sich im selben Fenster ausschalten. Ohne Internet wird eine fehlgeschlagene Prüfung angezeigt, keine falsche Entwarnung.
+Unter Hilfe → Updates suchen öffnen. „Updates suchen“ prüft das neueste stabile FlightStudio-Release auf GitHub. Eine neuere Version wird als „Update verfügbar“ hervorgehoben. Die automatische Suche beim Start ist voreingestellt, höchstens einmal täglich, und lässt sich im selben Fenster ausschalten. Ohne Internet wird eine fehlgeschlagene Prüfung angezeigt, keine falsche Entwarnung.
 
 In der Desktop-App: „Herunterladen und installieren“ lädt den Windows-Installer, prüft Dateigrösse und SHA-256-Prüfsumme, speichert den aktuellen Projektstand und öffnet die Installation. Danach schliesst FlightStudio. Den Windows-Installationsschritten folgen und die App anschliessend wieder öffnen. Während eines Exports ist die Installation gesperrt. Windows-Bestätigungen und Sicherheitsprüfungen bleiben bestehen.
 
@@ -187,6 +196,8 @@ Zu kurze Ausgabedatei: den Exportbereich und die Tempo-Automatik prüfen. Falsch
 
 | Taste / Geste | Funktion |
 | --- | --- |
+| Ctrl + N / Ctrl + O / Ctrl + S | Neues Projekt / Projekt öffnen / Projekt sichern |
+| Ctrl + I / Ctrl + E / F1 | Medien importieren / Exportieren / Hilfe |
 | Space | Abspielen / Pause |
 | S | Ausgewählte Clips teilen |
 | Delete | Ausgewählte Clips entfernen |

@@ -105,7 +105,7 @@ export function installTutorial({ pause, canStart, captureUI, prepareUI, restore
     restoreUI(savedUI); savedUI = null;
     for (const { el, x, y } of scrollState) if (el.isConnected) { el.scrollLeft = x; el.scrollTop = y; }
     scrollState.length = 0;
-    (focusBefore?.isConnected && !focusBefore.closest('dialog:not([open])') ? focusBefore : $('help')).focus({ preventScroll: true });
+    (focusBefore?.isConnected && !focusBefore.closest('dialog:not([open])') && focusBefore.getClientRects().length ? focusBefore : $('brand')).focus({ preventScroll: true });
   }
   function start(index = 0) {
     if (dialog.open || !canStart()) return;

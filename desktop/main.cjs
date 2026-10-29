@@ -34,51 +34,28 @@ let editor,
   quitting = false;
 const renderWindows = new Set();
 const iconPath = path.join(root, "desktop", "icon.png");
-let language = "de", english = {};
+let language = "de", theme = "light", english = {}, editorReady = false;
+const { editorMenu, dispatchEditorCommand } = require("./editor-menu.cjs");
 const tr = (text) => language === "en" ? english[text] || text : text;
 
 function updateMenu() {
-      Menu.setApplicationMenu(
-        Menu.buildFromTemplate([
-          {
-            label: tr("FlightStudio"),
-            submenu: [
-              {
-                label: tr("Exportordner öffnen"),
-                click: () => void shell.openPath(manager.directory),
-              },
-              {
-                label: tr("Programmdaten öffnen"),
-                click: () =>
-                  void shell.openPath(process.env.FLIGHTSTUDIO_DATA_DIR),
-              },
-              { type: "separator" },
-              { label: tr("Beenden"), click: () => app.quit() },
-            ],
-          },
-          {
-            label: tr("Bearbeiten"),
-            submenu: [
-              { role: "undo", label: tr("Rückgängig") },
-              { role: "redo", label: tr("Wiederholen") },
-              { type: "separator" },
-              { role: "cut", label: tr("Ausschneiden") },
-              { role: "copy", label: tr("Kopieren") },
-              { role: "paste", label: tr("Einfügen") },
-              { role: "selectAll", label: tr("Alles auswählen") },
-            ],
-          },
-          {
-            label: tr("Ansicht"),
-            submenu: [
-              { role: "resetZoom", label: tr("Originalgrösse") },
-              { role: "zoomIn", label: tr("Vergrössern") },
-              { role: "zoomOut", label: tr("Verkleinern") },
-              { role: "togglefullscreen", label: tr("Vollbild umschalten") },
-            ],
-          },
-        ]),
-      );
+  Menu.setApplicationMenu(Menu.buildFromTemplate(editorMenu({
+    tr, language, theme, ready: editorReady,
+    send: command => {
+      if (!editorReady || !editor || editor.isDestroyed()) return;
+      // Text editing keeps Chromium's normal undo stack; timeline edits use the editor history.
+      if (command === 'undo' || command === 'redo') {
+        editor.webContents.executeJavaScript('Boolean(document.activeElement?.matches("input,textarea,[contenteditable=true]"))')
+          .then(editing => { if (!editor || editor.isDestroyed()) return;
+            if (editing) editor.webContents[command]();
+            else editor.webContents.send('flightstudio:menu:command', command);
+          }).catch(() => {});
+      } else void dispatchEditorCommand(editor.webContents, command).catch(() => {});
+    },
+    openExports: () => void shell.openPath(manager.directory),
+    openData: () => void shell.openPath(process.env.FLIGHTSTUDIO_DATA_DIR),
+    quit: () => app.quit(),
+  })));
 }
 
 function secureWindow(win, origin, external = false) {
@@ -149,6 +126,7 @@ function showEditor() {
     },
   });
   secureWindow(editor, baseUrl, true);
+  editor.webContents.on("did-start-loading", () => { editorReady = false; updateMenu(); });
   editor.on("close", (event) => {
     if (!quitting && manager.active.length) {
       event.preventDefault();
@@ -297,6 +275,7 @@ if (workerUrl) {
       try { preferences = JSON.parse(await fs.readFile(prefsFile, "utf8")); } catch {}
       if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) preferences = {};
       language = preferences.language === "en" ? "en" : "de";
+      theme = preferences.theme === "dark" ? "dark" : "light";
       let savePreferences = Promise.resolve();
       const persistPreferences = () => {
         const content = JSON.stringify(preferences);
@@ -304,6 +283,7 @@ if (workerUrl) {
         return savePreferences;
       };
       const fromEditor = (event) => editor && event.sender === editor.webContents && event.senderFrame?.url.startsWith(baseUrl + "/");
+      ipcMain.on("flightstudio:menu:ready", event => { if (fromEditor(event)) { editorReady = true; updateMenu(); } });
       ipcMain.handle("flightstudio:language:get", (event) => fromEditor(event) ? language : "de");
       ipcMain.handle("flightstudio:language:set", async (event, value) => {
         if (!fromEditor(event) || !["de", "en"].includes(value)) throw new Error("Invalid preference request");
@@ -316,8 +296,9 @@ if (workerUrl) {
       ipcMain.handle("flightstudio:theme:get", (event) => fromEditor(event) && preferences.theme === "dark" ? "dark" : "light");
       ipcMain.handle("flightstudio:theme:set", async (event, value) => {
         if (!fromEditor(event) || !["light", "dark"].includes(value)) throw new Error("Invalid preference request");
-        preferences.theme = value;
+        preferences.theme = theme = value;
         await persistPreferences();
+        updateMenu();
       });
       process.env.PORT = process.env.FLIGHTSTUDIO_DESKTOP_PORT || "0";
       process.env.FLIGHTSTUDIO_DATA_DIR ||= path.join(

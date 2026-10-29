@@ -2,7 +2,7 @@
 
 [Deutsche Anleitung](ANLEITUNG.de.md) · [Windows download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-For FlightStudio 2.5.0. In the app: **Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
+For FlightStudio 2.5.1. In the app: **Help → Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
 
 The searchable in-app guide works offline. Online map and terrain layers need a connection.
 
@@ -19,6 +19,7 @@ The searchable in-app guide works offline. Online map and terrain layers need a 
 - [8 · Multiple flights, names and statistics](#multiple)
 - [Instruments: compass, vario and IGC fields](#instruments)
 - [9 · Audio, fades and transitions](#effects)
+- [Main menu and appearance](#menus)
 - [10 · Saving and moving to another laptop](#save)
 - [11 · Exporting](#export)
 - [Checking for and installing updates](#updates)
@@ -29,7 +30,7 @@ The searchable in-app guide works offline. Online map and terrain layers need a 
 
 ## 1 · Your first flight film
 
-1. Open Flights → Add flight files and import the original IGC. The demo flight is a generated route for experimenting.
+1. Open Flights (IGC) → Add flight files and import the original IGC. The demo flight is a generated route for experimenting.
 2. Open Media → Import and load videos, photos or audio. “Add to timeline on import” places them directly.
 3. Move the playhead to a recognizable moment and check that video and flight match. Move clips if needed.
 4. Trim clips, choose a project layout and check playback with Space.
@@ -51,7 +52,7 @@ The large program preview shows your edited film with its layout, map and instru
 
 Import the main flight before your media when possible. Matching capture times align clips along the flight. Simultaneous videos get separate tracks. Without a matching timestamp, a clip starts at the current playhead. Placement can always be changed manually.
 
-IGC times use UTC. Project settings → Recording time zone controls how times without an explicit zone are interpreted. A selected media clip offers capture-time and timing-alignment controls. Check the preview again after correcting them.
+IGC times use UTC. File → Project settings → Recording time zone controls how times without an explicit zone are interpreted. A selected media clip offers capture-time and timing-alignment controls. Check the preview again after correcting them.
 
 An edited Insta360 export may no longer carry the original capture start. FlightStudio cannot reconstruct removed sections or speed changes. Use originals, or split and align the exported clip manually.
 
@@ -63,7 +64,7 @@ Drag a clip to move its start. Drag an edge to trim. Ctrl-click to select multip
 
 Snapping helps position clips while moving them: the clip start snaps to nearby clip starts/ends, the playhead and time zero. N toggles it; Alt while dragging bypasses it. Snapping changes neither the contents nor speed of a clip.
 
-Track headers control visibility, mute and locking. × removes the track and its clips. Ctrl + Z undoes this; source files remain intact. Media and Flights in the header open their galleries; click again or × to close. Drag the divider above the timeline to change its height.
+Track headers control visibility, mute and locking. × removes the track and its clips. Ctrl + Z undoes this; source files remain intact. Media and Flights (IGC) in the header open their galleries; click again or × to close. Drag the divider above the timeline to change its height.
 
 <a id="range"></a>
 
@@ -109,7 +110,7 @@ Map styles include satellite, street map, grayscale relief and transparent relie
 
 ## 8 · Multiple flights, names and statistics
 
-Add further IGC files under Flights. The main flight controls the map timeline and camera target. Other flights share the map; compare them by UTC or flight start and apply a time offset.
+Add further IGC files under Flights (IGC). The main flight controls the map timeline and camera target. Other flights share the map; compare them by UTC or flight start and apply a time offset.
 
 The flight gallery contains names, colors, visibility and name tags. A matching color dot identifies each flight in the statistics. In Window position mode, move and resize the shared statistics box in the preview.
 
@@ -137,11 +138,19 @@ Select a timeline clip and open Clip. For video/audio, 100% is original volume, 
 
 For a dissolve or wipe, arrange two suitable clips on the same track, select the second and set the type and duration under “Transition from previous clip”. “Apply transition” moves this clip into an overlap. Other tracks stay in place. Recheck alignment for synchronized footage afterwards.
 
+<a id="menus"></a>
+
+## Main menu and appearance
+
+File contains New project, Open project, Save project, media import, Flights (IGC), Project settings and Export. The desktop app uses the native menu at the top of its window; the browser offers File, View and Help above the editing toolbar. Ctrl+N, Ctrl+O and Ctrl+S run the project actions directly.
+
+View → Language switches German/English. View → Appearance switches Light/Dark. Help contains Tutorial & Help and Check for updates. An available update also appears next to Export. Media, Flights (IGC), Clip, Flight map & camera and Instruments remain directly accessible in the toolbar.
+
 <a id="save"></a>
 
 ## 10 · Saving and moving to another laptop
 
-The current working state is saved locally automatically. “Save project” also creates a .flightstudio file. It contains editing data and the flight track, but not original videos, photos or audio. “Open” loads a project. Save a project file before updating.
+The current working state is saved locally automatically. “File → Save project” also creates a .flightstudio file. It contains editing data and the flight track, but not original videos, photos or audio. “File → Open project” loads a project. Save a project file before updating.
 
 For another laptop, copy both the project file and original media. Import missing originals there, then reopen the project file. Keep media unchanged, with their filenames when possible. Both installed and portable editions store data under %APPDATA%/FlightStudio-V2/data in the Windows user profile.
 
@@ -159,7 +168,7 @@ Background export uses the project snapshot taken at export start. Later edits d
 
 ## Checking for and installing updates
 
-Click Updates in the header. “Check for updates” checks the latest stable FlightStudio release on GitHub. A newer version highlights the “Update available” button. Automatic startup checks are enabled by default, at most once daily, and can be disabled in the same window. An offline check reports a failure, not a false up-to-date result.
+Open Help → Check for updates. “Check for updates” checks the latest stable FlightStudio release on GitHub. A newer version highlights the “Update available” button. Automatic startup checks are enabled by default, at most once daily, and can be disabled in the same window. An offline check reports a failure, not a false up-to-date result.
 
 In the desktop app, “Download and install” downloads the Windows installer, verifies its size and SHA-256 checksum, saves the current project and opens installation. FlightStudio then closes. Follow the Windows installer and reopen the app afterwards. Installation is blocked during export. Windows confirmations and security checks remain in place.
 
@@ -187,6 +196,8 @@ Output too short: check the export range and automatic speed setting. Unexpected
 
 | Key / gesture | Function |
 | --- | --- |
+| Ctrl + N / Ctrl + O / Ctrl + S | New project / open project / save project |
+| Ctrl + I / Ctrl + E / F1 | Import media / export / help |
 | Space | Play / pause |
 | S | Split selected clips |
 | Delete | Remove selected clips |

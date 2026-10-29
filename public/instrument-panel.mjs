@@ -13,7 +13,7 @@ export function installInstruments({ state, commit, select, selected }) {
     host.replaceChildren();
     const intro = element('p', say('Einzelne Instrumente über Video und Karte. Im Modus Fensterposition direkt ziehen und an der Ecke skalieren. Auch im Export.', 'Independent instruments over video and map. Drag and resize at a corner in Window position mode. Included in exports.'), 'hint');
     host.append(intro);
-    if (!flights.length) { host.append(element('p', say('Zuerst unter Flüge eine Flugdatei importieren.', 'First import a flight file under Flights.'))); return; }
+    if (!flights.length) { host.append(element('p', say('Zuerst unter Flüge (IGC) eine Flugdatei importieren.', 'First import a flight file under Flights (IGC).'))); return; }
     const check = (title, checked, change) => {
       const label = element('label', '', 'check'), input = element('input'); input.type = 'checkbox'; input.checked = checked;
       input.onchange = () => commit(() => change(input.checked)); label.append(input, document.createTextNode(title)); return label;

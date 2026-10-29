@@ -42,6 +42,7 @@ import { renderExport } from "./render-export.mjs";
 import { pixelSize } from "/lib/export-settings.mjs";
 import { installLanguageUI, getLanguage, translate as t } from "./i18n.mjs";
 import { installThemeUI } from "./theme.mjs";
+import { installAppMenu } from "./app-menu.mjs";
 import { installTutorial } from "./tutorial.mjs";
 const renderJob = new URLSearchParams(location.search).get("renderJob");
 // Hidden native windows do not reliably receive compositor animation frames.
@@ -145,7 +146,7 @@ function showGallery(name) {
   document.querySelector(".studio").classList.toggle("gallery-closed", !name);
   $("media-gallery").hidden = name !== "media";
   $("flight-gallery").hidden = name !== "flights";
-  $("gallery-title").textContent = name === "flights" ? "Fluggalerie" : "Mediathek";
+  $("gallery-title").textContent = name === "flights" ? "Fluggalerie (IGC)" : "Mediathek";
   if (name !== "media") closeSourcePreview();
   for (const id of ["media", "flights"]) {
     $("gallery-" + id).setAttribute("aria-expanded", name === id);
@@ -1907,7 +1908,7 @@ function wire() {
   };
   $("background").oninput = (e) => (S.background = e.target.value);
   $("background").onchange = changed;
-  $("project-name").onchange = $("project-name-settings").onchange = (e) => {
+  $("project-name").oninput = $("project-name-settings").oninput = (e) => {
     S.name = e.target.value || "Mein Flugfilm";
     scheduleSave();
   };
@@ -2026,7 +2027,7 @@ function wire() {
   };
   document.addEventListener("keydown", (e) => {
     if (
-      app.exporting || tutorial?.active ||
+      e.defaultPrevented || app.exporting || tutorial?.active || e.target.closest("#app-menubar") ||
       /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) ||
       $("source-preview").open ||
       $("help-dialog").open ||
@@ -2231,6 +2232,8 @@ async function init() {
       for (const [el, open] of ui.details) if (el.isConnected) el.open = open;
     },
   });
+  installAppMenu({ canRun: () => !app.exporting && !dragging && !tutorial?.active });
+  app.size();
   busy(false);
   nextFrame(tick);
   if (exporter.background) void exporter.refresh().catch(() => {});

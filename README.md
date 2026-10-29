@@ -6,7 +6,7 @@ The interface supports English and German, with light and dark themes.
 
 ## Tutorial and user guide / Tutorial und Anleitung
 
-In FlightStudio, choose **Tutorial & Help → Start tutorial** (German: **Tutorial & Hilfe → Tutorial starten**). An empty project also has a direct start button. The 17-step tour highlights the actual controls, opens the relevant panels and explains them with arrows. Use Back/Next, the topic picker or Esc. It pauses playback without editing your project and restores the previous panel arrangement afterwards.
+In FlightStudio, choose **Help → Tutorial & Help → Start tutorial** (German: **Hilfe → Tutorial & Hilfe → Tutorial starten**). An empty project also has a direct start button. The 17-step tour highlights the actual controls, opens the relevant panels and explains them with arrows. Use Back/Next, the topic picker or Esc. It pauses playback without editing your project and restores the previous panel arrangement afterwards.
 
 The same help window includes a searchable guide that works offline. Read it on GitHub: **[Deutsche Anleitung](docs/ANLEITUNG.de.md)** · **[English user guide](docs/GUIDE.en.md)**.
 
@@ -16,28 +16,34 @@ The tutorial is included from **2.4.0** onwards. Download the newer installer if
 
 **[Download FlightStudio for Windows](https://github.com/adorres1/FlightStudio/releases/latest)**
 
-- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.5.0.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
-- **Portable:** Download `FlightStudio-V2-Portable-2.5.0.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
+- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.5.1.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
+- **Portable:** Download `FlightStudio-V2-Portable-2.5.1.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
 - Windows 10/11, 64-bit. No ChatGPT account, GitHub account, Node.js installation or command line is needed. Internet access is needed for online map layers.
 - The executable is currently unsigned. Windows or an organization's application-control policy may block it. Do not disable security protections to run it.
 
-**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.5.0.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
+**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.5.1.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
 
 First steps: import an IGC flight, import videos/photos, review timestamp alignment, edit on the timeline, then export. Save the project before closing or updating. Imported files and exports stay on your computer.
 
 ## Updates and faster desktop export
 
-From **2.5.0**, choose **Updates → Check for updates → Download and install** in the desktop app. Automatic startup checks run at most once daily and can be disabled. Downloads are checked against the release checksum before launching the Windows installer. The app saves the project before closing; Windows confirmations remain. Users on older versions need one manual update to get this feature. The browser edition opens the download page; the portable edition's update button installs the app normally.
+From **2.5.0**, choose **Help → Check for updates → Download and install** in the desktop app. Automatic startup checks run at most once daily and can be disabled. Downloads are checked against the release checksum before launching the Windows installer. The app saves the project before closing; Windows confirmations remain. Users on older versions need one manual update to get this feature. The browser edition opens the download page; the portable edition's update button installs the app normally.
 
 Desktop export now decodes video sequentially with FFmpeg, overlaps frame preparation with encoding and uses AMD/NVIDIA/Intel H.264 encoding when a probe succeeds. **Export → Acceleration → CPU (compatibility)** remains available. WebM avoids the previous second video encode. Map rendering, source resolution and project complexity still affect speed.
 
-**Deutsch:** Ab 2.5.0 oben **Updates → Updates suchen → Herunterladen und installieren**. Unter **Exportieren → Beschleunigung** ist die automatische GPU-Auswahl voreingestellt. Die genaue Erklärung steht in der [Anleitung](docs/ANLEITUNG.de.md#performance).
+**Deutsch:** Ab 2.5.0 unter **Hilfe → Updates suchen → Herunterladen und installieren**. Unter **Exportieren → Beschleunigung** ist die automatische GPU-Auswahl voreingestellt. Die genaue Erklärung steht in der [Anleitung](docs/ANLEITUNG.de.md#performance).
 
 ## Flight instruments / Fluginstrumente
 
 Open **Instruments** to add a starter layout or individual displays: compass (GPS course), GPS/pressure vario, altitude tape, ground speed, UTC clock, elapsed time, distance, ground glide ratio and coordinates. Recorded IGC extensions and header fields are available when present. Each display has its own flight source, visibility, position, size and transparency. The same instruments appear in the live preview and exported film. Hide the map track while retaining its clips to show instruments without the map.
 
 **Deutsch:** Oben **Instrumente → Grundlayout** wählen. Jede Anzeige lässt sich separat einblenden, verschieben und skalieren. **Hintergrund 0 %** macht sie transparent. Details und Datenherkunft stehen in der [Anleitung](docs/ANLEITUNG.de.md#instruments). Für Zusatzfelder in älteren Projekten die IGC-Datei erneut importieren.
+
+## Menus and workspace / Menüs und Arbeitsfläche
+
+From **2.5.1**, **File** contains New/Open/Save project, media/flight import, Project settings and Export. **View** contains language and light/dark appearance. **Help** opens the tutorial and update check. The desktop app uses the native menu bar; the browser edition offers compact menus above the toolbar. An available update remains visible next to Export. Ctrl+N/O/S operate projects; F1 opens help.
+
+**Deutsch:** **Datei** enthält Neu/Öffnen/Projekt sichern, Import, Projekt-Einstellungen und Export. **Ansicht** enthält Sprache und Hell/Dunkel. **Hilfe** enthält Tutorial und Update-Suche. Medien, Flüge (IGC), Clip, Flugkarte & Kamera, Instrumente und Export bleiben direkt erreichbar. Das neue Gleitschirm-Icon mit GPS-Spur wird in App, Browser und Windows-Paket verwendet.
 
 ## Features
 
@@ -78,7 +84,7 @@ On Windows, `START-FlightStudio-V2.cmd` starts the browser edition and `STOP-Fli
 npm run build:desktop
 ```
 
-The installer and portable executable are generated under `release/desktop-2.5.0`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
+The installer and portable executable are generated under `release/desktop-2.5.1`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
 
 Builds are unsigned unless the distributor configures code signing. Windows application-control policies can block unsigned builds. No security settings are changed by the application.
 
@@ -86,7 +92,7 @@ This repository contains the source code. Prebuilt Windows applications are atta
 
 ## Editing
 
-Use **Media** and **Flights** in the header to open either gallery. Close either sidebar with its x button to free preview space. **Clip**, **Flight map & camera** and **Project settings** open the right sidebar. Drag the top of the timeline to adjust its height.
+Use **Media** and **Flights (IGC)** in the header to open either gallery. Close either sidebar with its x button to free preview space. **Clip**, **Flight map & camera** and **Project settings** open the right sidebar. Drag the top of the timeline to adjust its height.
 
 The preview switch selects **Window position** or **Rotate map**. In map mode, left-drag rotates and tilts, right-drag or Shift-drag pans, and the wheel zooms. In window mode, drag a frame or flight statistics box to move it; drag its corner to resize it.
 

@@ -1,0 +1,47 @@
+/* File, appearance and help live above the focused editing toolbar. */
+:root { --app-header-height: 94px; }
+:root.native-menu { --app-header-height: 62px; }
+.app-menubar { height:32px; display:flex; gap:2px; align-items:center; padding:0 12px; background:#fff; border-bottom:1px solid var(--line); position:relative; z-index:50; }
+.app-menubar[hidden] { display:none; }
+.app-menubar details { position:relative; }
+.app-menubar summary { list-style:none; cursor:pointer; padding:6px 12px; border-radius:5px; }
+.app-menubar summary::-webkit-details-marker { display:none; }
+.app-menubar summary:hover,.app-menubar details[open] > summary { background:#eaf2ed; }
+.app-menubar summary:focus-visible { outline:2px solid #57a081; }
+.menu-popup { position:absolute; left:0; top:100%; min-width:260px; padding:6px; border:1px solid var(--line); border-radius:8px; background:#fff; box-shadow:0 10px 35px #152f3826; }
+.menu-popup button { display:flex; align-items:center; justify-content:space-between; gap:28px; width:100%; padding:9px 12px; border:0; text-align:left; background:transparent; }
+.menu-popup kbd { color:#74857f; font-size:10px; }
+.menu-popup hr { border:0; border-top:1px solid var(--line); margin:5px; }
+.menu-popup label { display:flex; flex-direction:column; gap:6px; padding:9px 12px; }
+.topbar { height:62px; padding:0 16px; gap:20px; }
+.brand img { border-radius:9px; display:block; flex-shrink:0; }
+.project-title { display:flex; min-width:90px; max-width:240px; flex:1; }
+.top-actions { gap:12px; }
+.toolbar-group { display:flex; gap:4px; align-items:center; }
+.toolbar-group + .toolbar-group { border-left:1px solid var(--line); padding-left:12px; }
+.top-actions .toolbar-group button { border-color:transparent; background:transparent; }
+.top-actions .toolbar-group button.active { background:#e4f0e8; border-color:#a2c7b2; }
+.top-actions .toolbar-group button:hover { background:#edf4ef; }
+.top-actions button[hidden] { display:none; }
+.studio { height:calc(100dvh - var(--app-header-height)); min-height:570px; grid-template-rows:minmax(280px,1fr) var(--timeline); }
+.empty-logo { display:block; margin:0 auto 16px; border-radius:18px; }
+#updates-open { font-size:10px; }
+[data-theme="dark"] .app-menubar,[data-theme="dark"] .menu-popup { background:#202830; color:#d9e2e7; }
+[data-theme="dark"] .app-menubar summary:hover,[data-theme="dark"] .app-menubar details[open] > summary { background:#35444e; }
+[data-theme="dark"] .top-actions .toolbar-group button.active { background:#284d40; border-color:#538a71; }
+[data-theme="dark"] .top-actions .toolbar-group button:hover { background:#35444e; }
+@media (max-width:1200px) { .topbar { gap:12px; } .brand > span { display:none; } .top-actions { gap:8px; } }
+@media (max-width:900px) { .topbar { min-width:660px; padding-inline:10px; gap:8px; } .project-title { min-width:75px; } .top-actions { gap:5px; } .toolbar-group + .toolbar-group { padding-left:5px; } .studio { height:auto; } .inspector { top:var(--app-header-height); } }
+
+/* Give smaller laptop displays more preview space without removing the draggable timeline. */
+:root { --timeline: clamp(280px, 30vh, 330px); }
+.preview-well:has(#empty-stage:not([hidden])) #stage { width:100% !important; height:100%; aspect-ratio:auto !important; }
+#empty-stage { overflow:auto; padding:12px; }
+#empty-stage .empty-logo { width:42px; height:42px; border-radius:11px; margin:0 auto 4px; flex-shrink:0; }
+#empty-stage h1 { margin:4px; }
+#empty-stage p { margin:4px 0; line-height:1.5; }
+#empty-stage button { padding:6px 10px; margin-top:4px; }
+
+.empty-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+@media (max-height:800px) { #empty-stage .empty-logo { display:none; } #empty-stage { padding:4px; } }
+.topbar { min-height:62px; flex-wrap:nowrap; padding-block:0; }

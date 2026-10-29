@@ -4,7 +4,7 @@ const text=(de,en)=>getLanguage()==='en'?en:de;
 export async function installUpdates(app) {
   const button=document.createElement('button');
   button.id='updates-open';button.type='button';button.setAttribute('translate','no');
-  $('help').after(button);
+  button.hidden=true; $('export-open').before(button);
   const dialog=document.createElement('dialog');
   dialog.id='updates-dialog';dialog.setAttribute('translate','no');dialog.setAttribute('aria-labelledby','updates-title');
   dialog.innerHTML=`<div class="dialog-heading"><h2 id="updates-title"></h2><button id="updates-close" type="button">×</button></div>
@@ -21,6 +21,7 @@ export async function installUpdates(app) {
   function draw(){
     button.textContent=state.status==='available'?text('Update verfügbar','Update available'):text('Updates','Updates');
     button.classList.toggle('has-update',state.status==='available');
+    button.hidden=state.status!=='available';
     button.title=text('Updates suchen','Check for updates');
     $('updates-title').textContent=text('FlightStudio aktualisieren','Update FlightStudio');
     $('updates-close').ariaLabel=text('Updates schliessen','Close updates');
@@ -38,7 +39,7 @@ export async function installUpdates(app) {
     $('updates-auto').checked=state.automatic;
     $('updates-auto').disabled=busy;
     $('updates-auto-label').textContent=text('Beim Start automatisch suchen (höchstens einmal täglich)','Check automatically at startup (at most once a day)');
-    $('updates-privacy').textContent=text('Die Suche fragt nur das öffentliche FlightStudio-Release auf GitHub ab. Projekte, Flüge und Medien werden nicht übertragen. Vor der Installation wird dein Projekt lokal gespeichert. Windows kann eine Bestätigung verlangen.','The check only requests the public FlightStudio release on GitHub. Projects, flights and media are not uploaded. Your project is saved locally before installation. Windows may ask for confirmation.');
+    $('updates-privacy').textContent=text('Die Suche fragt nur das öffentliche FlightStudio-Release auf GitHub ab. Projekte, Flüge (IGC) und Medien werden nicht übertragen. Vor der Installation wird dein Projekt lokal gespeichert. Windows kann eine Bestätigung verlangen.','The check only requests the public FlightStudio release on GitHub. Projects, flights and media are not uploaded. Your project is saved locally before installation. Windows may ask for confirmation.');
     $('updates-check').textContent=text('Updates suchen','Check for updates');
     $('updates-check').disabled=busy;
     $('updates-install').hidden=!native||state.status!=='available';
