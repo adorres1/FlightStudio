@@ -471,21 +471,27 @@
         nicht stummgeschalteten Spuren</label
       >
       <p class="hint" id="export-hint"></p>
+      <p class="hint">Vor dem Rendern wählst du Dateiname und Speicherort. Der fertige Film wird automatisch dort gespeichert.</p>
+      <p id="export-destination" translate="no"></p>
       <progress id="export-progress" max="1" value="0" hidden></progress>
       <p id="export-status" role="status"></p>
       <video id="export-result" controls playsinline hidden></video>
       <div class="dialog-actions">
         <button id="export-cancel" hidden>Abbrechen</button
-        ><button id="export-start" class="primary">Export starten ↗</button
+        ><button id="export-start" class="primary">Speicherort wählen & exportieren …</button
         ><a id="export-download" class="button primary" hidden
           >Video speichern ↓</a
         >
+        <button id="export-reveal" hidden>Im Ordner anzeigen</button>
+        <button id="export-save-as" hidden>Kopie speichern …</button>
       </div>
+      <details class="export-past"><summary>Bisherige Exporte</summary>
       <div
         id="export-history"
         class="export-history"
         aria-label="Bisherige Exporte"
       ></div>
+      </details>
     </dialog>
     <dialog id="help-dialog">
       <div class="dialog-heading">

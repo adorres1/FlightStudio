@@ -45,3 +45,9 @@
 .empty-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
 @media (max-height:800px) { #empty-stage .empty-logo { display:none; } #empty-stage { padding:4px; } }
 .topbar { min-height:62px; flex-wrap:nowrap; padding-block:0; }
+#export-destination { overflow-wrap: anywhere; font-size: 12px; color: var(--muted); }
+.export-past { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.export-past summary { cursor: pointer; font-size: 13px; }
+#export-history article { gap: 8px; flex-wrap: wrap; }
+#export-history article span { flex: 1 1 240px; }
+#export-dialog .dialog-actions { flex-wrap: wrap; }

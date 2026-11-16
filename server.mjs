@@ -134,7 +134,7 @@ export const server=http.createServer(async(req,res)=>{
       if(action==='fail'&&req.method==='POST'){await exportJobs.fail(job.id,(await readJSON(req)).error);json(res,200,{ok:true});return;}
       if(action==='finish'&&req.method==='POST'){await exportJobs.finish(job.id);json(res,200,{status:job.status});return;}
       if(action==='cancel'&&req.method==='POST'){await exportJobs.cancel(job.id);json(res,200,{ok:true});return;}
-      if(action==='file'&&['GET','HEAD'].includes(req.method)&&job.status==='done'){await serveFile(req,res,job.output,'FlightStudio-'+job.id.slice(0,8)+'.'+job.format);return;}
+      if(action==='file'&&['GET','HEAD'].includes(req.method)&&['done','save-failed'].includes(job.status)){await serveFile(req,res,job.output,'FlightStudio-'+job.id.slice(0,8)+'.'+job.format);return;}
     }
     if(route==='/api/shutdown'&&req.method==='POST'){
       if(exportJobs.active.length)throw new Error('Ein Export läuft noch. Bitte abschliessen oder abbrechen.');

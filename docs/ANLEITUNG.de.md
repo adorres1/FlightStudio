@@ -162,7 +162,11 @@ Der Export verwendet den markierten Bereich. Für den ganzen Film zuerst Bereich
 
 Die Desktop-App unterstützt bis 4K und 60 fps. Ein Hintergrundexport kann weiterlaufen, wenn das Editorfenster geschlossen ist. Rechner und FlightStudio-Hintergrundprozess müssen an bleiben; vollständig Beenden oder Ruhezustand unterbricht die Arbeit. Eine reine Browser-Aufzeichnung benötigt einen sichtbaren Tab und hat weniger Exportoptionen.
 
-Während des Hintergrundexports wird der Projektstand vom Exportstart verwendet. Spätere Bearbeitungen ändern diesen laufenden Export nicht. Fertige Dateien erscheinen im Exportfenster. Kartenanbieter benötigen eine Internetverbindung.
+Mit „Speicherort wählen & exportieren“ bestimmst du vor dem Rendern Dateiname und Zielordner. Abbrechen im Speicherdialog startet keinen Export. Der fertige Film wird automatisch gespeichert; „Im Ordner anzeigen“ öffnet seinen Speicherort. Eine vorhandene Datei wird erst nach erfolgreichem Rendern und Speichern ersetzt.
+
+Während des Hintergrundexports wird der Projektstand vom Exportstart verwendet. Spätere Bearbeitungen ändern diesen laufenden Export nicht. Frühere Filme findest du unter „Bisherige Exporte“; sie werden nicht automatisch als neue Vorschau eingeblendet. Bei einem Speicherfehler wählst du einen anderen Speicherort, ohne erneut zu rendern. Kartenanbieter benötigen eine Internetverbindung.
+
+Im Browser wird der Speicherort ebenfalls vor dem Start gewählt. Verwende Chrome oder Edge und lasse den Tab bis zum abgeschlossenen Speichern geöffnet. Bei einer reinen Browser-Aufzeichnung muss er sichtbar bleiben. Nach einem geschlossenen oder neu geladenen Tab lässt sich ein fertig gerenderter Film unter „Bisherige Exporte“ erneut speichern.
 
 <a id="updates"></a>
 

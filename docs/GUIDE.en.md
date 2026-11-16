@@ -162,7 +162,11 @@ Export uses the selected range. Choose Range → All for the whole film. Export 
 
 The desktop app supports up to 4K and 60 fps. Background export can continue after closing the editor window. Keep the computer and FlightStudio background process running; fully quitting or sleeping interrupts the work. Browser recording requires a visible tab and has fewer export options.
 
-Background export uses the project snapshot taken at export start. Later edits do not change that running export. Finished files appear in the export window. Map providers require an internet connection.
+“Choose location & export” lets you choose the filename and destination before rendering. Cancelling the save dialog starts no export. The finished movie is saved automatically; “Show in folder” reveals its location. An existing file is replaced only after rendering and saving succeed.
+
+Background export uses the project snapshot taken at export start. Later edits do not change that running export. Previous movies are under “Previous exports” and do not automatically appear as the new preview. If saving fails, choose another location without rendering again. Map providers require an internet connection.
+
+In the browser, choose the destination before starting as well. Use Chrome or Edge and keep the tab open until saving completes. Browser recording requires a visible tab. After closing or reloading the tab, a finished background-rendered movie can still be saved from “Previous exports”.
 
 <a id="updates"></a>
 

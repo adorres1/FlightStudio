@@ -16,12 +16,12 @@ The tutorial is included from **2.4.0** onwards. Download the newer installer if
 
 **[Download FlightStudio for Windows](https://github.com/adorres1/FlightStudio/releases/latest)**
 
-- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.5.1.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
-- **Portable:** Download `FlightStudio-V2-Portable-2.5.1.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
+- **Installer (recommended):** Download `FlightStudio-V2-Setup-2.5.2.exe`, open it and follow the installation steps. Then open **FlightStudio V2** from the Start menu or desktop shortcut.
+- **Portable:** Download `FlightStudio-V2-Portable-2.5.2.exe` and open it without installation. Projects are still stored in the Windows user profile, not beside the executable.
 - Windows 10/11, 64-bit. No ChatGPT account, GitHub account, Node.js installation or command line is needed. Internet access is needed for online map layers.
 - The executable is currently unsigned. Windows or an organization's application-control policy may block it. Do not disable security protections to run it.
 
-**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.5.1.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
+**Deutsch:** Auf der [Download-Seite](https://github.com/adorres1/FlightStudio/releases/latest) unter **Assets** die Datei **FlightStudio-V2-Setup-2.5.2.exe** herunterladen, per Doppelklick starten und den Installationsschritten folgen. Anschliessend **FlightStudio V2** im Startmenü öffnen. Ein GitHub- oder ChatGPT-Konto ist nicht nötig. Die Dateien namens **Source code** sind für Entwickler, nicht für die Installation.
 
 First steps: import an IGC flight, import videos/photos, review timestamp alignment, edit on the timeline, then export. Save the project before closing or updating. Imported files and exports stay on your computer.
 
@@ -45,6 +45,13 @@ From **2.5.1**, **File** contains New/Open/Save project, media/flight import, Pr
 
 **Deutsch:** **Datei** enthält Neu/Öffnen/Projekt sichern, Import, Projekt-Einstellungen und Export. **Ansicht** enthält Sprache und Hell/Dunkel. **Hilfe** enthält Tutorial und Update-Suche. Medien, Flüge (IGC), Clip, Flugkarte & Kamera, Instrumente und Export bleiben direkt erreichbar. Das neue Gleitschirm-Icon mit GPS-Spur wird in App, Browser und Windows-Paket verwendet.
 
+## Choose the export destination / Speicherort vor dem Export
+
+From **2.5.2**, **Choose location & export** opens a save dialog before rendering. The finished movie is saved automatically to the selected file. **Show in folder** reveals it; **Save a copy** is optional. Previous exports are in a collapsed history instead of appearing as the next export's preview. Cancelling the save dialog starts no job. If saving fails, choose another location without rendering again.
+
+**Deutsch:** Unter **Exportieren → Speicherort wählen & exportieren** Dateiname und Ordner auswählen. Der fertige Film wird dort automatisch gespeichert. Ein Speicherfehler lässt sich durch einen neuen Speicherort beheben, ohne den Film nochmals zu rendern. **Bisherige Exporte** enthält frühere Filme. Die Desktop-App speichert auch bei geschlossenem Editorfenster weiter; Rechner und Hintergrundprozess müssen laufen.
+
+In the browser, use Chrome or Edge and keep the tab open until saving finishes. If the tab is closed, a finished background render can still be saved from the export history. Existing files are preserved until the completed output is ready to replace them.
 ## Features
 
 - Live preview and a multitrack timeline: move, trim, split, duplicate and delete clips.
@@ -84,7 +91,7 @@ On Windows, `START-FlightStudio-V2.cmd` starts the browser edition and `STOP-Fli
 npm run build:desktop
 ```
 
-The installer and portable executable are generated under `release/desktop-2.5.1`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
+The installer and portable executable are generated under `release/desktop-2.5.2`. `START-FlightStudio-Desktop.cmd` starts the unpacked build with this checkout's local data directory. Do not edit the same data directory from two instances at once.
 
 Builds are unsigned unless the distributor configures code signing. Windows application-control policies can block unsigned builds. No security settings are changed by the application.
 

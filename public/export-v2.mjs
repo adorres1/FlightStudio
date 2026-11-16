@@ -1,3 +1,5 @@
+import {resetExportOutput,chooseBrowserTarget,writeBrowserTarget,saveBrowserCopy} from './export-output.mjs';
+import {translate as t} from './i18n.mjs';
 export class RecorderExporter {
   constructor(app) {
     this.app = app;
@@ -7,6 +9,7 @@ export class RecorderExporter {
   status(s) {
     document.querySelector("#export-status").textContent = s;
   }
+  open(){if(!this.active)resetExportOutput();}
   async start({ format, size, audio, jobId }) {
     const app = this.app;
     if (!window.MediaRecorder)
@@ -20,6 +23,10 @@ export class RecorderExporter {
       throw new Error(
         "Bitte aktuellen Chrome oder Edge für den Export verwenden.",
       );
+    resetExportOutput();
+    this.target=await chooseBrowserTarget(format,app.project().name);
+    if(!this.target)return false;
+    try {
     await app.engine.enableAudio();
     app.pause();
     this.previous = { time: app.time, speed: app.speed };
@@ -43,7 +50,6 @@ export class RecorderExporter {
     if (audio)
       for (const t of app.engine.audio.destination.stream.getAudioTracks())
         this.stream.addTrack(t.clone());
-    try {
       this.job = jobId
         ? { id: jobId }
         : await app.api("/api/exports", {
@@ -81,6 +87,7 @@ export class RecorderExporter {
       document.body.classList.add("exporting");
       this.status("Medien und Karten werden vorbereitet …");
     } catch (e) {
+      await this.target?.stream.abort().catch(()=>{});
       this.cleanup();
       throw e;
     }
@@ -157,17 +164,18 @@ export class RecorderExporter {
         job = await this.app.api(`/api/exports/${this.job.id}`);
         if (job.status === "failed") throw new Error(job.error);
       } while (job.status !== "done");
-      const link = document.querySelector("#export-download");
-      link.href = job.url;
-      link.download = "FlightStudio-V2." + this.format;
-      link.hidden = false;
+      this.status(t('Film wird gespeichert'));
+      document.querySelector('#export-cancel').hidden=true;
+      let saveError;
+      try{await writeBrowserTarget(this.target,job.url);}catch(e){saveError=e;}
+      const save=document.querySelector('#export-save-as');save.hidden=false;
+      save.textContent=t(saveError?'Speicherort erneut wählen …':'Kopie speichern …');
+      save.onclick=()=>void saveBrowserCopy(job).catch(e=>this.app.toast(e.message,true));
       const preview = document.querySelector("#export-result");
       preview.src = job.url;
       preview.hidden = false;
       document.querySelector("#export-progress").value = 1;
-      this.status(
-        "Fertig. Alle sichtbaren Ebenen und aktiven Tonspuren wurden zusammengefügt.",
-      );
+      this.status(saveError?t('Speichern fehlgeschlagen')+': '+saveError.message:t('Film gespeichert'));
       this.cleanup();
     } catch (e) {
       await this.fail(e);
@@ -176,6 +184,7 @@ export class RecorderExporter {
   async cancel() {
     if (!this.active) return;
     this.cancelled = true;
+    await this.target?.stream.abort().catch(()=>{});
     this.app.pause();
     if (this.recorder.state !== "inactive") this.recorder.stop();
     if (this.startedRecording) await this.stopped;

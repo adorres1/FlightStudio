@@ -1,4 +1,9 @@
 const { contextBridge, ipcRenderer } = require("electron");
+contextBridge.exposeInMainWorld('flightStudioExport', {
+  start: options => ipcRenderer.invoke('flightstudio:export:start',options),
+  save: id => ipcRenderer.invoke('flightstudio:export:save',id),
+  reveal: id => ipcRenderer.invoke('flightstudio:export:reveal',id),
+});
 contextBridge.exposeInMainWorld("flightStudioPrefs", {
   getLanguage: () => ipcRenderer.invoke("flightstudio:language:get"),
   setLanguage: (language) => ipcRenderer.invoke("flightstudio:language:set", language),

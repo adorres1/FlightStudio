@@ -190,16 +190,16 @@ function updateTray(job) {
     blocker = undefined;
   }
   if (
-    job?.status === "done" &&
+    ["done", "save-failed"].includes(job?.status) &&
     (!editor || !editor.isVisible()) &&
     Notification.isSupported()
   ) {
     const notification = new Notification({
-      title: tr("Dein Flugfilm ist fertig"),
-      body: tr("FlightStudio öffnen, um das Video zu speichern."),
+      title: tr(job.status === 'save-failed' ? "Speichern fehlgeschlagen" : "Dein Flugfilm ist fertig"),
+      body: job.savedPath ? tr("Film gespeichert") + ': ' + job.savedPath : tr("FlightStudio öffnen, um das Video zu speichern."),
       icon: iconPath,
     });
-    notification.on("click", showEditor);
+    notification.on("click", () => job.savedPath ? shell.showItemInFolder(job.savedPath) : showEditor());
     notification.show();
   }
 }
@@ -310,6 +310,13 @@ if (workerUrl) {
       );
       manager = backend.exportJobs;
       baseUrl = await backend.ready;
+      manager.requireDestination = true;
+      const { exportDialogs } = await import(pathToFileURL(path.join(root,'desktop','export-dialog.mjs')).href);
+      const exportUI = exportDialogs({manager,dialog,window:()=>editor,shell,defaultDirectory:app.getPath('videos'),tr});
+      for(const action of ['start','save','reveal'])ipcMain.handle('flightstudio:export:'+action,(event,value)=>{
+        if(!fromEditor(event))throw new Error('Invalid export request');
+        return exportUI[action](value);
+      });
       const { UpdateInstaller } = await import(pathToFileURL(path.join(root, "lib", "update-installer.mjs")).href);
       const network = (url, options) => net.fetch(url, { ...options, credentials: "omit" });
       backend.updates.fetch = network;

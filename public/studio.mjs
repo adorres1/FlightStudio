@@ -1947,7 +1947,7 @@ function wire() {
   $("help").onclick = () => $("help-dialog").showModal();
   $("help-close").onclick = () => $("help-dialog").close();
   $("export-open").onclick = safe(() => {
-    if (!duration() && !exporter.background)
+    if (!duration())
       throw new Error("Bitte zuerst Material in die Timeline einsetzen.");
     readRange();
     if (app.range[1] <= app.range[0]) {
@@ -1957,6 +1957,7 @@ function wire() {
     app.pause();
     $("export-summary").textContent =
       `${format(viewTime(app.range[0]))} – ${format(viewTime(app.range[1]))} · Film ca. ${format(app.outputLength(...app.range))} · ${S.aspect} · ${S.tracks.length} Spuren`;
+    exporter.open();
     $("export-dialog").showModal();
     updateExportSpecs();
     if (exporter.background)
@@ -1989,7 +1990,7 @@ function wire() {
     $("export-result").hidden = true;
     $("export-progress").hidden = false;
     try {
-      await exporter.start({
+      const started = await exporter.start({
         format: $("export-format").value,
         size: Number($("export-size").value),
         fps: Number($("export-fps").value),
@@ -1997,6 +1998,7 @@ function wire() {
         acceleration: $("export-acceleration").value,
         audio: $("export-audio").checked,
       });
+      if(started === false){$('export-start').disabled=false;$('export-close').disabled=false;$('export-cancel').hidden=true;}
     } catch (e) {
       $("export-start").disabled = false;
       $("export-close").disabled = false;
@@ -2174,9 +2176,9 @@ async function init() {
     $("export-acceleration").disabled = true;
     $("export-fps").title = $("export-quality").title = "Weitere Exportoptionen benötigen die Desktop-App.";
   }
-  $("export-hint").textContent = status.backgroundExport
+  $("export-hint").textContent = window.flightStudioExport
     ? "Export im Hintergrund: Du kannst weiterarbeiten oder das Editorfenster schliessen. Der Rechner und der FlightStudio-Hintergrundprozess müssen weiterlaufen. Jedes Bild wird anhand der Timeline berechnet. Die Dauer hängt von Film, Auflösung und Rechner ab."
-    : "Aufzeichnung wie in der Vorschau. Diesen Tab sichtbar lassen. Für Export bei geschlossenem Fenster die Desktop-App verwenden.";
+    : "Im Browser diesen Tab bis zum fertigen Speichern geöffnet lassen. Bei Aufzeichnung den Tab sichtbar lassen. Für Export bei geschlossenem Fenster die Desktop-App verwenden.";
   if (!renderJob) instrumentPanel = installInstruments({ state: () => S, selected: () => selectedInstrument, select: selectInstrument, commit: fn => { app.pause(); snapshot(); fn(); changed(); } });
   wire();
   window.addEventListener("flightstudio-language", () => { renderSelection(); handleKey = ""; instrumentPanel?.render(); exporter.background && void exporter.refresh(); });
