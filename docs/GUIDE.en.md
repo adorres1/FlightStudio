@@ -2,7 +2,7 @@
 
 [Deutsche Anleitung](ANLEITUNG.de.md) · [Windows download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-For FlightStudio 2.5.1. In the app: **Help → Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
+For FlightStudio 2.5.4. In the app: **Help → Tutorial & Help → Start tutorial**. An empty project also offers a direct **Start tutorial** button. The 17-step tour highlights controls with arrows. Back/Next, topic selection and Esc are available throughout. The tour does not edit your project; it pauses playback and restores the previous panel arrangement when finished.
 
 The searchable in-app guide works offline. Online map and terrain layers need a connection.
 
@@ -54,6 +54,8 @@ Import the main flight before your media when possible. Matching capture times a
 
 IGC times use UTC. File → Project settings → Recording time zone controls how times without an explicit zone are interpreted. A selected media clip offers capture-time and timing-alignment controls. Check the preview again after correcting them.
 
+Recordings may start before or end after the IGC file. Video extending past the IGC end is kept in full. Gaps up to 15 minutes keep their time alignment. More distant recordings are placed at the beginning or end to avoid hours of empty timeline. Preflight recordings shift the existing timeline together to make room.
+
 An edited Insta360 export may no longer carry the original capture start. FlightStudio cannot reconstruct removed sections or speed changes. Use originals, or split and align the exported clip manually.
 
 <a id="editing"></a>
@@ -62,9 +64,13 @@ An edited Insta360 export may no longer carry the original capture start. Flight
 
 Drag a clip to move its start. Drag an edge to trim. Ctrl-click to select multiple clips. Set the playhead and press S to split selected clips. Delete removes selected clips. Ctrl + D duplicates; Ctrl + Z/Y undoes/redoes.
 
+A single click selects a clip and leaves the playhead in place, including after splitting. Double-click deliberately seeks to the clip start.
+
 Snapping helps position clips while moving them: the clip start snaps to nearby clip starts/ends, the playhead and time zero. N toggles it; Alt while dragging bypasses it. Snapping changes neither the contents nor speed of a clip.
 
 Track headers control visibility, mute and locking. × removes the track and its clips. Ctrl + Z undoes this; source files remain intact. Media and Flights (IGC) in the header open their galleries; click again or × to close. Drag the divider above the timeline to change its height.
+
+As more tracks are added, rows shrink to text height first. Only when they still do not fit does a clearly green scrollbar appear on the right. Alt + wheel scrolls through tracks. Drag the divider above the timeline to make more room.
 
 <a id="range"></a>
 
@@ -82,13 +88,15 @@ For one section, split at its boundaries with S, select it and set Clip → Clip
 
 “Accelerate flight without video/photo” starts disabled. “Enable 50×” turns it on; the number field allows up to 200×. For example, 10 minutes of flight-only footage take about 12 seconds at 50×. Manual flight-clip speeds have priority. Audio alone does not count as video/photo.
 
+While moving or trimming a clip, automatic acceleration is temporarily suspended in the timeline view. Position the clip on the unaccelerated time axis. Releasing restores the previous automatic setting. A click without dragging does not change the view. Manually assigned clip speed is preserved.
+
 Film time shows the timeline shortened by automatic acceleration. Edit time without speed-up shows the unaccelerated arrangement. “Preview” beside Play changes only viewing speed, not the speed of the exported film.
 
 <a id="layout"></a>
 
 ## 6 · Layout, picture-in-picture and image zoom
 
-Project layout below the preview selects Auto, Full screen, Large video, Large flight, Grid or Stack. Choose 16:9 / 9:16 / 1:1 for the aspect ratio. Simultaneous camera recordings can occupy separate tiles.
+Project layout in the top toolbar selects Auto, Full screen, Large video, Large flight, Grid or Stack. Choose 16:9 / 9:16 / 1:1 for the aspect ratio. Simultaneous camera recordings can occupy separate tiles.
 
 In Window position mode, drag frames and resize them at a corner. The color-coded flight-statistics box can also be moved and resized. Frames may extend outside the canvas; only the visible portion is exported.
 
@@ -102,7 +110,9 @@ For a grid or transparent map in only one section, split the flight clip at the 
 
 Switch to Rotate map: drag on the map to rotate and tilt. Right-drag or Shift + drag pans. The wheel changes the distance. Flight map & camera opens heading, pitch, distance and map-style controls.
 
-Camera move: set an initial view (the first saved view applies from the beginning of the flight) and press “Save view here”. Go to a later position, set the target view and transition duration, then save again. The transition starts at that new point and moves from the previous view to the target. The app uses saved camera moves; check the preview. Transitions must not overlap and must fit within the flight.
+The map starts in top view (straight overhead). Move to the time where the new view should be reached. Mouse and slider changes are a preview only. “Save viewpoint here” keeps the view and updates an existing point at the same time. Without saving, playback, seeking or export resets the view. “Discard change” resets it immediately. Only a viewpoint at 00:00 changes the initial view.
+
+The transition runs before the saved time, measured in finished-film time. Example: a view at 00:30 with a 5-second transition moves from 00:25 to 00:30. The previous view stays until then. Near the beginning or another viewpoint, the duration is shortened. To change duration, click the camera point, edit seconds and save again. Existing camera moves are converted to this timing model when opened.
 
 Map styles include satellite, street map, grayscale relief and transparent relief. Maps and terrain require internet access. Provider credits remain visible in exports.
 
@@ -162,9 +172,9 @@ Export uses the selected range. Choose Range → All for the whole film. Export 
 
 The desktop app supports up to 4K and 60 fps. Background export can continue after closing the editor window. Keep the computer and FlightStudio background process running; fully quitting or sleeping interrupts the work. Browser recording requires a visible tab and has fewer export options.
 
-“Choose location & export” lets you choose the filename and destination before rendering. Cancelling the save dialog starts no export. The finished movie is saved automatically; “Show in folder” reveals its location. An existing file is replaced only after rendering and saving succeed.
+Enter a film name at the top of the export dialog. Export cannot start without a name. The film name is independent of the project name. “Choose location & export” then asks for a destination, suggesting the film name as the filename. Cancelling the save dialog starts no export. The finished movie is saved automatically; “Show in folder” reveals its location. An existing file is replaced only after rendering and saving succeed.
 
-Background export uses the project snapshot taken at export start. Later edits do not change that running export. Previous movies are under “Previous exports” and do not automatically appear as the new preview. If saving fails, choose another location without rendering again. Map providers require an internet connection.
+Background export uses the project snapshot taken at export start. Later edits do not change that running export. Previous movies are under “Previous exports” and the export dialog shows settings, progress and file actions without a video preview. If saving fails, choose another location without rendering again. Map providers require an internet connection.
 
 In the browser, choose the destination before starting as well. Use Chrome or Edge and keep the tab open until saving completes. Browser recording requires a visible tab. After closing or reloading the tab, a finished background-rendered movie can still be saved from “Previous exports”.
 

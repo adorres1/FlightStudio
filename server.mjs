@@ -145,7 +145,7 @@ export const server=http.createServer(async(req,res)=>{
     if(route.startsWith('/examples/')){base=path.join(ROOT,'examples');relative=route.slice('/examples'.length);}
     if(route.startsWith('/cesium/')){base=path.join(ROOT,'node_modules','cesium','Build','Cesium');relative=decodeURIComponent(route.slice(7));}
     else if(route==='/vendor/luxon.js'){await serveFile(req,res,path.join(ROOT,'node_modules','luxon','build','es6','luxon.mjs'));return;}
-    else if(['/lib/flight.mjs','/lib/instruments.mjs','/lib/igc-fields.mjs','/lib/time.mjs','/lib/camera.mjs','/lib/edit.mjs','/lib/timeline.mjs','/lib/flight-overlays.mjs','/lib/export-settings.mjs','/lib/clip-effects.mjs'].includes(route)){base=ROOT;}
+    else if(['/lib/flight.mjs','/lib/instruments.mjs','/lib/igc-fields.mjs','/lib/time.mjs','/lib/camera.mjs','/lib/edit.mjs','/lib/timeline.mjs','/lib/flight-overlays.mjs','/lib/export-name.mjs','/lib/export-settings.mjs','/lib/clip-effects.mjs'].includes(route)){base=ROOT;}
     const file=path.resolve(base,'.'+relative);if(!file.startsWith(base+path.sep))throw new Error('Ungültiger Pfad.');await serveFile(req,res,file);
   }catch(e){if(!res.headersSent)json(res,e.status||(e.code==='ENOENT'?404:400),{error:e.code==='ENOENT'?'Datei nicht gefunden.':e.message});else res.destroy();}
 });

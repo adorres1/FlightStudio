@@ -20,6 +20,7 @@
     <script type="module" src="/studio.mjs"></script>
   </head>
   <body>
+    <div id="editor-header">
     <nav id="app-menubar" class="app-menubar" aria-label="Hauptmenü">
       <details><summary>Datei</summary><div class="menu-popup">
         <button id="new-project"><span>Neues Projekt</span><kbd>Ctrl+N</kbd></button>
@@ -57,6 +58,41 @@
         <button id="export-open" class="primary">Exportieren ↗</button>
       </div>
     </header>
+    <div class="preview-toolbar" role="group" aria-label="Vorschau-Werkzeuge">
+      <span class="preview-toolbar-title">Vorschau</span>
+      <div class="viewer-tools">            <select id="aspect" aria-label="Bildformat">
+              <option value="16:9">16:9 · Querformat</option>
+              <option value="9:16">9:16 · Hochformat</option>
+              <option value="1:1">1:1 · Quadrat</option></select
+            >
+</div>
+                <div class="layout-controls">
+            <span>Projektlayout</span
+            ><select id="layout" aria-label="Projektlayout">
+              <option value="auto">Automatisch · mehrere Kameras</option>
+              <option value="single">Vollbild · Spuren übereinander</option>
+              <option value="pip">Video gross · Bild im Bild</option>
+              <option value="map-main">Flug gross · Videos im Bild</option>
+              <option value="grid">Raster / nebeneinander</option>
+              <option value="stack">Untereinander</option></select
+            ><button id="reset-layout">Zurücksetzen</button>
+          </div>
+
+                  <label class="interaction-switch" id="interaction-switch">
+              <input type="checkbox" id="map-mouse" role="switch" aria-label="Karte drehen" aria-describedby="interaction-labels">
+              <span class="switch-options" id="interaction-labels"><span>Fensterposition</span><span>Karte drehen</span></span>
+            </label>
+
+      <details class="preview-help"><summary aria-label="Bedienhinweise" title="Bedienhinweise">?</summary>
+        <div class="preview-help-popup"><strong>Vorschau bedienen</strong>
+          <p id="selection-summary" translate="no">Alles beginnt mit deinem Material.</p>
+          <p>Fensterposition: Bildfenster ziehen und an den Ecken skalieren. Mausrad im Video: Bildinhalt zoomen.</p>
+          <p id="mouse-hint" class="hint" hidden>Ziehen: drehen/neigen · Rechtsziehen oder Umschalt + Ziehen: verschieben · Mausrad: zoomen</p>
+        </div>
+      </details>
+      <div class="preview-indicators"><span id="auto-speed-status"></span><span id="terrain-status"></span></div>
+    </div>
+    </div>
     <main class="studio">
       <aside class="library" id="library">
         <div class="section-heading gallery-heading"><h2 id="gallery-title">Mediathek</h2><button id="gallery-close" class="icon" aria-label="Galerie schliessen">×</button></div>
@@ -103,26 +139,6 @@
         </section>
       </aside>
       <section class="viewer">
-        <div class="viewer-heading">
-          <div>
-            <span class="eyebrow">PROGRAMMVORSCHAU</span
-            ><span id="selection-summary" translate="no"
-              >Alles beginnt mit deinem Material.</span
-            >
-          </div>
-          <div class="viewer-tools">
-            <select id="aspect" aria-label="Bildformat">
-              <option value="16:9">16:9 · Querformat</option>
-              <option value="9:16">9:16 · Hochformat</option>
-              <option value="1:1">1:1 · Quadrat</option></select
-            >
-            <label class="interaction-switch" id="interaction-switch">
-              <input type="checkbox" id="map-mouse" role="switch" aria-label="Karte drehen" aria-describedby="interaction-labels">
-              <span class="switch-options" id="interaction-labels"><span>Fensterposition</span><span>Karte drehen</span></span>
-            </label>
-          </div>
-        </div>
-        <p id="mouse-hint" class="hint" hidden>Ziehen: drehen/neigen · Rechtsziehen oder Umschalt + Ziehen: verschieben · Mausrad: zoomen</p>
         <div class="preview-well">
           <div id="stage">
             <canvas
@@ -145,20 +161,6 @@
               <div><button id="empty-tutorial">Tutorial starten →</button></div>
             </div>
           </div>
-        </div>
-        <div class="viewer-bottom">
-          <div class="layout-controls">
-            <span>Projektlayout</span
-            ><select id="layout" aria-label="Projektlayout">
-              <option value="auto">Automatisch · mehrere Kameras</option>
-              <option value="single">Vollbild · Spuren übereinander</option>
-              <option value="pip">Video gross · Bild im Bild</option>
-              <option value="map-main">Flug gross · Videos im Bild</option>
-              <option value="grid">Raster / nebeneinander</option>
-              <option value="stack">Untereinander</option></select
-            ><button id="reset-layout">Zurücksetzen</button>
-          </div>
-          <span id="auto-speed-status"></span><span id="terrain-status"></span>
         </div>
         <div class="transport">
           <div>
@@ -215,21 +217,21 @@
             </select></label
           ><button id="frame-flight">Gesamten Flug zeigen ↗</button
           ><label
-            >Richtung <output id="heading-label">17°</output
+            >Richtung <output id="heading-label">0°</output
             ><input
               id="camera-heading"
               type="range"
               min="0"
               max="360"
-              value="17" /></label
+              value="0" /></label
           ><label
-            >Neigung <output id="pitch-label">37°</output
+            >Neigung <output id="pitch-label">90°</output
             ><input
               id="camera-pitch"
               type="range"
               min="5"
-              max="89"
-              value="37" /></label
+              max="90"
+              value="90" /></label
           ><label
             >Abstand <output id="range-label">4000 m</output
             ><input
@@ -240,7 +242,7 @@
               step="50"
               value="4000" /></label
           ><label
-            >Übergang zum nächsten Blick (s)<input
+            >Übergang vor diesem Zeitpunkt (s)<input
               id="camera-duration"
               type="number"
               min="0"
@@ -248,10 +250,11 @@
               step=".5"
               value="5" /></label
           ><button id="camera-add">＋ Blickwinkel hier speichern</button>
+          <p id="camera-draft" class="hint camera-draft" role="status" hidden>Ungespeicherter Blickwinkel · Nur Vorschau</p>
+          <button id="camera-discard" hidden>Änderung verwerfen</button>
           <div id="camera-list"></div>
           <p class="hint">
-            Erster Punkt: Ausgangsblick. Danach neue Position und Blickrichtung
-            wählen. Der Übergang beginnt am neuen Punkt.
+            Start: Draufsicht. Maus und Regler ändern nur die Vorschau. Erst „Blickwinkel hier speichern“ übernimmt die Ansicht. Ohne Speichern wird sie beim Abspielen oder Wechseln der Zeitposition verworfen. Der Übergang endet am gespeicherten Zeitpunkt. Den Startblick bei 00:00 speichern.
           </p>
         </details>
         <details id="project-panel" open hidden>
@@ -434,17 +437,23 @@
       accept=".flightstudio,.json"
       hidden
     />
-    <dialog id="export-dialog">
+    <dialog id="export-dialog" aria-labelledby="export-title">
       <div class="dialog-heading">
         <div>
           <span class="eyebrow">DEIN FILM ZUM MITNEHMEN</span>
-          <h2>Film exportieren</h2>
+          <h2 id="export-title">Film exportieren</h2>
         </div>
         <button id="export-close" class="icon" aria-label="Export schliessen">
           ×
         </button>
       </div>
-      <p id="export-summary"></p>
+      <p id="export-summary" class="export-summary"></p>
+      <fieldset id="export-settings">
+        <legend class="visually-hidden">Export-Einstellungen</legend>
+        <label class="export-name-label" for="export-name">Wie soll dein Film heissen?</label>
+        <div class="export-name-row"><input id="export-name" type="text" required maxlength="125" autocomplete="off" placeholder="z. B. Abendflug in den Bergen" aria-describedby="export-name-hint export-name-error" /><span id="export-extension" translate="no">.mp4</span></div>
+        <p id="export-name-hint" class="hint">Dieser Name wird als Dateiname vorgeschlagen. Dein Projektname bleibt unverändert.</p>
+        <p id="export-name-error" class="field-error" role="alert"></p>
       <div class="two-fields">
         <label
           >Format<select id="export-format">
@@ -470,17 +479,15 @@
         ><input id="export-audio" type="checkbox" checked /> Ton aller aktiven,
         nicht stummgeschalteten Spuren</label
       >
-      <p class="hint" id="export-hint"></p>
+      </fieldset>
+      <details class="export-info"><summary>Hinweise zum Export</summary><p class="hint" id="export-hint"></p></details>
       <p class="hint">Vor dem Rendern wählst du Dateiname und Speicherort. Der fertige Film wird automatisch dort gespeichert.</p>
       <p id="export-destination" translate="no"></p>
       <progress id="export-progress" max="1" value="0" hidden></progress>
       <p id="export-status" role="status"></p>
-      <video id="export-result" controls playsinline hidden></video>
       <div class="dialog-actions">
         <button id="export-cancel" hidden>Abbrechen</button
         ><button id="export-start" class="primary">Speicherort wählen & exportieren …</button
-        ><a id="export-download" class="button primary" hidden
-          >Video speichern ↓</a
         >
         <button id="export-reveal" hidden>Im Ordner anzeigen</button>
         <button id="export-save-as" hidden>Kopie speichern …</button>

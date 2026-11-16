@@ -1,3 +1,4 @@
+import {filmName} from '../lib/export-name.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -82,8 +83,8 @@ test('cancel before completion leaves the destination unchanged; HTTP options ca
 test('native save dialog cancellation creates no job; only its selected path is used',async t=>{
   const {data,file}=await fixture(t),calls=[];let result={canceled:true};
   const manager={directory:path.join(data,'exports'),active:[],create:async(options,target)=>{calls.push(target.path);return {id:'new'};}};
-  const ui=exportDialogs({manager,dialog:{showSaveDialog:async(_win,options)=>{assert.deepEqual(options.filters[0].extensions,['mp4']);return result;}},window:()=>null,shell:{},defaultDirectory:path.dirname(file)});
-  const options={project:{name:'Test'},range:[0,1],format:'mp4',destinationPath:path.join(data,'evil.mp4')};
+  const ui=exportDialogs({manager,dialog:{showSaveDialog:async(_win,options)=>{assert.deepEqual(options.filters[0].extensions,['mp4']);assert.equal(path.basename(options.defaultPath),'Evening flight.mp4');return result;}},window:()=>null,shell:{},defaultDirectory:path.dirname(file)});
+  const options={name:'Evening flight',project:{name:'Test'},range:[0,1],format:'mp4',destinationPath:path.join(data,'evil.mp4')};
   assert.equal(await ui.start(options),null);assert.equal(calls.length,0);
   result={canceled:false,filePath:file};assert.equal((await ui.start(options)).id,'new');assert.deepEqual(calls,[file]);
 });
@@ -112,7 +113,9 @@ for(const format of ['mp4','webm'])test(`real ${format} frame export writes the 
   const target=await prepareDestination(destination,format,data);
   const project={version:2,name:'Synthetic export',assets:[],tracks:[{id:'v',visible:true}],
     clips:[{id:'title',trackId:'v',kind:'title',start:0,in:0,out:1,rate:1,text:'Test'}]};
-  const job=await manager.create({format,project,range:[0,1/24],size:720,fps:24,quality:'compact',audio:false,acceleration:'cpu'},target);
+  const job=await manager.create({name:'Evening flight',format,project,range:[0,1/24],size:720,fps:24,quality:'compact',audio:false,acceleration:'cpu'},target);
+  assert.equal(manager.get(job.id).name,'Evening flight');
+  assert.equal(project.name,'Synthetic export');
   await manager.scene(job.id);
   const frame=execFileSync(ffmpeg,['-v','error','-f','lavfi','-i','color=c=blue:s=1280x720','-frames:v','1','-f','image2pipe','-vcodec','mjpeg','pipe:1'],{windowsHide:true,maxBuffer:2e6});
   await manager.frame(job.id,0,frame);await manager.finish(job.id);
@@ -122,4 +125,15 @@ for(const format of ['mp4','webm'])test(`real ${format} frame export writes the 
   assert.deepEqual(await fs.readFile(destination),await fs.readFile(result.output));
   const metadata=JSON.parse(execFileSync(ffprobe.path,['-v','error','-show_streams','-of','json',destination],{windowsHide:true,encoding:'utf8'}));
   assert.equal(metadata.streams[0].width,1280);assert.equal(metadata.streams[0].height,720);
+});
+
+test('export names require an explicit usable filename while preserving Unicode',()=>{
+  assert.equal(filmName('  Über den Bergen.mp4  '),'Über den Bergen');
+  for(const value of ['', '  ', '.webm', 'flight/name', 'CON', 'x'.repeat(121)])assert.throws(()=>filmName(value));
+});
+test('invalid explicit film names cannot start a backend job',async t=>{
+  const {data}=await fixture(t),manager=new ExportJobs(path.join(data,'exports'),'unused',async()=>{});
+  await manager.init();t.after(()=>clearInterval(manager.timer));
+  await assert.rejects(()=>manager.create({format:'mp4',name:'   '}),/Namen/);
+  assert.equal(manager.list().length,0);
 });

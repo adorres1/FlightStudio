@@ -1,8 +1,6 @@
 import {translate as t} from './i18n.mjs';
 const $=id=>document.getElementById(id);
 export function resetExportOutput() {
-  const video=$('export-result');video.pause();video.hidden=true;video.removeAttribute('src');video.load();
-  $('export-download').hidden=true;$('export-download').removeAttribute('href');
   $('export-save-as').hidden=true;$('export-reveal').hidden=true;
   $('export-progress').value=0;$('export-progress').hidden=true;
   $('export-status').textContent='';$('export-destination').textContent='';

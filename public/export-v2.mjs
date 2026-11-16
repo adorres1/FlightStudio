@@ -10,7 +10,7 @@ export class RecorderExporter {
     document.querySelector("#export-status").textContent = s;
   }
   open(){if(!this.active)resetExportOutput();}
-  async start({ format, size, audio, jobId }) {
+  async start({ name, format, size, audio, jobId }) {
     const app = this.app;
     if (!window.MediaRecorder)
       throw new Error("Bitte aktuellen Chrome oder Edge verwenden.");
@@ -24,7 +24,7 @@ export class RecorderExporter {
         "Bitte aktuellen Chrome oder Edge für den Export verwenden.",
       );
     resetExportOutput();
-    this.target=await chooseBrowserTarget(format,app.project().name);
+    this.target=await chooseBrowserTarget(format,name);
     if(!this.target)return false;
     try {
     await app.engine.enableAudio();
@@ -54,7 +54,7 @@ export class RecorderExporter {
         ? { id: jobId }
         : await app.api("/api/exports", {
             method: "POST",
-            body: JSON.stringify({ format }),
+            body: JSON.stringify({ format, name }),
           });
       this.recorder = new MediaRecorder(this.stream, {
         mimeType: mime,
@@ -171,9 +171,6 @@ export class RecorderExporter {
       const save=document.querySelector('#export-save-as');save.hidden=false;
       save.textContent=t(saveError?'Speicherort erneut wählen …':'Kopie speichern …');
       save.onclick=()=>void saveBrowserCopy(job).catch(e=>this.app.toast(e.message,true));
-      const preview = document.querySelector("#export-result");
-      preview.src = job.url;
-      preview.hidden = false;
       document.querySelector("#export-progress").value = 1;
       this.status(saveError?t('Speichern fehlgeschlagen')+': '+saveError.message:t('Film gespeichert'));
       this.cleanup();
@@ -209,6 +206,7 @@ export class RecorderExporter {
     this.status("Export fehlgeschlagen: " + e.message);
   }
   cleanup() {
+    document.querySelector("#export-settings").disabled=false;
     this.active = false;
     this.finishing = false;
     this.stream?.getTracks().forEach((t) => t.stop());

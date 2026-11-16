@@ -1,13 +1,13 @@
 import { sampleFlight } from "/lib/flight.mjs";
-import { cameraAt } from "/lib/camera.mjs";
+import { cameraAt, TOP_VIEW } from "/lib/camera.mjs";
 import { flightReadouts, flightName } from "/lib/flight-overlays.mjs";
 export class FlightMap {
   constructor(warn) {
     const C = (this.C = window.Cesium);
     C.Ion.defaultAccessToken = "";
     this.warn = warn;
-    this.heading = 0.3;
-    this.pitch = -0.65;
+    this.heading = TOP_VIEW.heading;
+    this.pitch = TOP_VIEW.pitch;
     this.range = 4000;
     this.mode = "follow";
     this.frames = [];
@@ -279,8 +279,8 @@ export class FlightMap {
     c.viewBoundingSphere(
       this.sphere,
       new C.HeadingPitchRange(
-        0.25,
-        -0.75,
+        TOP_VIEW.heading,
+        TOP_VIEW.pitch,
         Math.max(2500, this.sphere.radius * 2.7),
       ),
     );
@@ -341,7 +341,7 @@ export class FlightMap {
       anchor = C.Cartesian3.fromRadians(p.longitude, p.latitude, original.height);
     }
     this.heading = start.heading + (pan ? 0 : dx * 5);
-    this.pitch = Math.max(-1.55, Math.min(-.06, start.pitch - (pan ? 0 : dy * 3)));
+    this.pitch = Math.max(-Math.PI/2, Math.min(-.06, start.pitch - (pan ? 0 : dy * 3)));
     this.range = Math.max(100, Math.min(200000, start.range * zoom));
     camera.lookAt(anchor, new C.HeadingPitchRange(this.heading, this.pitch, this.range));
     camera.lookAtTransform(C.Matrix4.IDENTITY);

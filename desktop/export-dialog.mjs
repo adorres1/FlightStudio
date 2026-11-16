@@ -1,3 +1,4 @@
+import {filmName} from '../lib/export-name.mjs';
 import path from 'node:path';
 import {exportFilename,prepareDestination} from '../lib/export-destination.mjs';
 
@@ -22,7 +23,8 @@ export function exportDialogs({manager,dialog,window: getWindow,shell,defaultDir
       choosing=true;
       try {
         if(!options?.project||!Array.isArray(options.range)||options.range[1]<=options.range[0])throw new Error('Ungültiger Exportbereich.');
-        const target=await choose(options.project.name,options.format);
+        const name=options.name===undefined?options.project.name:filmName(options.name);
+        const target=await choose(name,options.format);
         if(!target)return null;
         return await manager.create(options,target);
       } finally {choosing=false;}

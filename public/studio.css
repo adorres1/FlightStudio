@@ -1032,11 +1032,6 @@ progress {
   height: 9px;
   accent-color: var(--green);
 }
-#export-result {
-  width: 100%;
-  max-height: 260px;
-  background: #17252a;
-}
 #toast {
   position: fixed;
   left: 50%;

@@ -46,3 +46,11 @@ export function installAppMenu({ canRun = () => true } = {}) {
     native.onCommand(run); native.ready();
   }
 }
+
+export function installPreviewToolbar() {
+  const $=id=>document.getElementById(id);
+  const header=$('editor-header'),help=document.querySelector('.preview-help');
+  new ResizeObserver(()=>document.documentElement.style.setProperty('--app-header-height',header.offsetHeight+'px')).observe(header);
+  document.addEventListener('pointerdown',event=>{if(!help.contains(event.target))help.open=false;});
+  help.addEventListener('keydown',event=>{if(event.key==='Escape'){event.stopPropagation();help.open=false;help.querySelector('summary').focus();}});
+}

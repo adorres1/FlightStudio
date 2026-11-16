@@ -21,7 +21,7 @@ export class BackgroundExporter {
       let job;
       if(window.flightStudioExport)job=await window.flightStudioExport.start(input);
       else {
-        target=await chooseBrowserTarget(options.format,input.project.name);
+        target=await chooseBrowserTarget(options.format,input.name);
         if(!target)return false;
         job=await this.app.api('/api/exports',{method:'POST',body:JSON.stringify(input)});
         this.targets.set(job.id,target);
@@ -44,6 +44,8 @@ export class BackgroundExporter {
       const jobs=await this.app.api('/api/exports');
       if(this.starting||revision!==this.revision)return;
       const current=selectedExport(jobs,this.jobId),active=jobs.some(running);
+      $('export-settings').disabled=active;
+      if(active&&current?.name)$('export-name').value=current.name;
       $('export-start').disabled=active;$('export-close').disabled=false;
       $('export-cancel').hidden=!active||current?.status==='saving';
       $('export-open').textContent=active?`Export ${Math.round((current?.progress||0)*100)} % ↗`:t('Exportieren ↗');
@@ -62,10 +64,6 @@ export class BackgroundExporter {
         $('export-status').textContent=[t(saveError?'Speichern fehlgeschlagen':current.savedPath||target?.saved?'Film gespeichert':labels[current.status]),
           running(current)?Math.round(current.progress*100)+' %':null,current.encoderLabel,current.error||target?.error].filter(Boolean).join(' · ');
         $('export-destination').textContent=current.destinationPath||(target?t('Speicherort')+': '+target.handle.name:'');
-        const preview=$('export-result');
-        if(current.url){if(preview.getAttribute('src')!==current.url)preview.src=current.url;preview.hidden=false;}
-        else {preview.pause();preview.hidden=true;preview.removeAttribute('src');}
-        $('export-download').hidden=true;
         $('export-reveal').hidden=!window.flightStudioExport||!current.savedPath;
         $('export-reveal').onclick=()=>void window.flightStudioExport.reveal(current.id).catch(e=>this.app.toast(e.message,true));
         $('export-save-as').hidden=!current.url;
@@ -78,7 +76,7 @@ export class BackgroundExporter {
         text.textContent=`${new Date(job.created).toLocaleString(getLanguage()==='en'?'en-GB':'de-CH')} · ${job.name} · ${t(job.savedPath?'Film gespeichert':labels[job.status])}`;
         row.append(text);
         if(job.url){
-          const preview=document.createElement('button');preview.textContent=t('Ansehen');preview.onclick=()=>{this.jobId=job.id;void this.refresh();};row.append(preview);
+          const preview=document.createElement('button');preview.textContent=t('Details');preview.onclick=()=>{this.jobId=job.id;void this.refresh();};row.append(preview);
           const save=document.createElement('button');save.textContent=t(job.savedPath&&window.flightStudioExport?'Im Ordner anzeigen':'Speichern unter …');
           save.onclick=()=>job.savedPath&&window.flightStudioExport?void window.flightStudioExport.reveal(job.id).catch(e=>this.app.toast(e.message,true)):void this.saveCopy(job);row.append(save);
         }

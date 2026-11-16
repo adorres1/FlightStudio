@@ -20,6 +20,7 @@ export function convertV1(old, assets, createProject) {
           : "pip";
   p.map = {
     ...p.map,
+    timing: "departure",
     style: old.mapStyle || "satellite",
     camera: old.cameraMode || "follow",
     initial: old.initialPose,

@@ -2,7 +2,7 @@
 
 [English guide](GUIDE.en.md) · [Windows-Download](https://github.com/adorres1/FlightStudio/releases/latest)
 
-Für FlightStudio 2.5.1. In der App: **Hilfe → Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
+Für FlightStudio 2.5.4. In der App: **Hilfe → Tutorial & Hilfe → Tutorial starten**. Im leeren Projekt gibt es auch direkt **Tutorial starten**. Die Tour hat 17 Schritte, Pfeile und hervorgehobene Bedienelemente. Zurück/Weiter, Themenauswahl und Esc sind jederzeit verfügbar. Dein Projekt wird dabei nicht bearbeitet; die Vorschau pausiert und die vorherige Anordnung der Menüs wird am Ende wiederhergestellt.
 
 Die nachlesbare Hilfe im Programm funktioniert ohne Internet und lässt sich durchsuchen. Nur Online-Karten und Gelände brauchen eine Verbindung.
 
@@ -54,6 +54,8 @@ Importiere den Hauptflug möglichst vor den Medien. Passende Aufnahmezeiten ordn
 
 IGC-Zeiten sind UTC. Unter Datei → Projekt-Einstellungen → Zeitzone der Aufnahmen legst du fest, wie Zeiten ohne eigene Zeitzone interpretiert werden. Beim ausgewählten Medienclip gibt es Aufnahmezeit und zeitliche Zuordnung. Prüfe die Vorschau nach einer Korrektur erneut.
 
+Aufnahmen dürfen vor dem Beginn oder nach dem Ende der IGC-Datei liegen. Videoanteile über das IGC-Ende hinaus bleiben vollständig erhalten. Bei bis zu 15 Minuten Abstand bleibt die zeitliche Zuordnung bestehen. Weiter entfernte Aufnahmen werden am Anfang bzw. Ende angefügt, damit keine stundenlange Leerstrecke entsteht. Aufnahmen vor dem Flug verschieben die vorhandene Timeline gemeinsam nach hinten.
+
 Bei einem bereits geschnittenen Insta360-Export ist der Zeitstempel möglicherweise nicht mehr der ursprüngliche Aufnahmebeginn. Bereits entfernte Teile und Tempoänderungen kann FlightStudio nicht rekonstruieren. Nutze Originalaufnahmen oder teile und ordne den exportierten Clip von Hand zu.
 
 <a id="editing"></a>
@@ -62,9 +64,13 @@ Bei einem bereits geschnittenen Insta360-Export ist der Zeitstempel möglicherwe
 
 Clip ziehen: Start verschieben. Clip-Ränder ziehen: kürzen. Strg-Klick: mehrere Clips auswählen. Abspiellinie setzen und S: ausgewählte Clips teilen. Entf: ausgewählte Clips entfernen. Strg + D: duplizieren. Strg + Z/Y: rückgängig/wiederholen.
 
+Ein einfacher Klick wählt einen Clip aus und lässt die Abspiellinie stehen, auch nach dem Teilen. Ein Doppelklick springt bewusst zum Clip-Anfang.
+
 Einrasten ist eine Positionierungshilfe beim Verschieben: Der Clip-Anfang rastet an nahen Clip-Anfängen/-Enden, der Abspiellinie und bei 0 ein. N schaltet um; Alt beim Ziehen setzt es vorübergehend aus. Es verändert weder den Inhalt noch das Tempo eines Clips.
 
 Links an jeder Spur kannst du Sichtbarkeit, Ton und Sperre einstellen. × entfernt die Spur samt ihren Clips. Mit Strg + Z kannst du das rückgängig machen. Die Originaldateien bleiben erhalten. Medien und Flüge (IGC) oben öffnen die Galerien; ein erneuter Klick oder × schliesst sie. Die Trennlinie über der Timeline verändert deren Höhe.
+
+Bei vielen Spuren werden die Zeilen zunächst bis auf Schrifthöhe verkleinert. Erst wenn sie dann nicht mehr hineinpassen, erscheint rechts ein deutlich grüner Scrollbalken. Alt + Mausrad scrollt durch die Spuren. Mit der Trennlinie über der Timeline kannst du mehr Platz schaffen.
 
 <a id="range"></a>
 
@@ -82,13 +88,15 @@ Für ein einzelnes Stück: Clip mit S an den Grenzen teilen, auswählen und unte
 
 Die Automatik „Flug ohne Video/Foto beschleunigen“ startet ausgeschaltet. „50× einschalten“ aktiviert sie; das Zahlenfeld erlaubt bis 200×. Beispiel: 10 Minuten reiner Flug dauern bei 50× etwa 12 Sekunden. Ein manuell gesetztes Tempo am Flugclip hat Vorrang. Ton allein zählt nicht als Video/Foto.
 
+Beim Ziehen oder Kürzen eines Clips wird die automatische Beschleunigung vorübergehend aus der Timeline-Ansicht genommen. Du positionierst den Clip auf der unbeschleunigten Zeitachse. Beim Loslassen kehrt die vorherige Automatik zurück. Ein Klick ohne Verschieben verändert die Ansicht nicht. Manuell gesetztes Clip-Tempo bleibt erhalten.
+
 Filmzeit zeigt die durch Automatik verkürzte Timeline. Schnittzeit ohne Automatik zeigt die unbeschleunigte Anordnung. „Vorschau“ neben Play verändert nur die Abspielgeschwindigkeit beim Anschauen, nicht das Tempo des exportierten Films.
 
 <a id="layout"></a>
 
 ## 6 · Layout, Bild-in-Bild und Bildzoom
 
-Projektlayout unter der Vorschau wählt Automatisch, Vollbild, Video gross, Flug gross, Raster oder Untereinander. Die Auswahl 16:9 / 9:16 / 1:1 legt das Bildformat fest. Parallel laufende Kameras können eigene Felder belegen.
+Projektlayout in der oberen Werkzeugleiste wählt Automatisch, Vollbild, Video gross, Flug gross, Raster oder Untereinander. Die Auswahl 16:9 / 9:16 / 1:1 legt das Bildformat fest. Parallel laufende Kameras können eigene Felder belegen.
 
 Im Modus Fensterposition kannst du Bildfenster ziehen und an der Ecke skalieren. Auch das Datenkästchen mit den farbigen Flugwerten lässt sich bewegen und skalieren. Fenster dürfen ausserhalb des Bildrandes liegen; exportiert wird nur der sichtbare Ausschnitt.
 
@@ -102,7 +110,9 @@ Raster oder transparente Karte nur in einem Abschnitt: Flugclip an den Grenzen t
 
 Schalter auf Karte drehen: Auf der Karte ziehen dreht und neigt die Ansicht. Rechtsziehen oder Umschalt + Ziehen verschiebt sie. Das Mausrad verändert den Abstand. Flugkarte & Kamera öffnet die Regler für Richtung, Neigung und Abstand sowie die Kartenstile.
 
-Kamerafahrt: Einen Ausgangsblick einstellen (der erste gespeicherte Blick gilt ab Flugbeginn) und „Blickwinkel hier speichern“ drücken. Zu einer späteren Position gehen, einen Zielblick einstellen, die Übergangsdauer wählen und erneut speichern. Der Übergang beginnt an diesem neuen Punkt und bewegt sich vom vorherigen zum neuen Blick. Die App verwendet gespeicherte Kamerafahrten; prüfe das Ergebnis in der Vorschau. Übergänge dürfen sich nicht überschneiden und müssen in den Flug passen.
+Die Karte startet in der Topview (senkrecht von oben). Gehe zu der Stelle, an der ein neuer Blickwinkel erreicht sein soll. Änderungen mit Maus und Reglern sind nur eine Vorschau. Erst „Blickwinkel hier speichern“ übernimmt die Ansicht und aktualisiert einen vorhandenen Punkt an derselben Stelle. Ohne Speichern springt die Karte beim Abspielen, Zeitwechsel oder Export zurück. „Änderung verwerfen“ setzt sie sofort zurück. Nur ein Blickwinkel bei 00:00 verändert den Anfangsblick.
+
+Die Übergangsdauer läuft vor dem gespeicherten Zeitpunkt ab und bezieht sich auf die fertige Filmzeit. Beispiel: Blickwinkel bei 00:30 mit 5 Sekunden Übergang = Kamerafahrt von 00:25 bis 00:30. Bis dahin bleibt der vorherige Blick erhalten. Am Filmanfang oder bei nahen Kamerapunkten wird die Dauer verkürzt. Für eine andere Dauer den Kamerapunkt anklicken, Sekunden ändern und erneut speichern. Bisherige Kamerafahrten werden beim Öffnen auf diese Zeitlogik umgerechnet.
 
 Die Kartenstile umfassen Satellit, Strassenkarte, Schwarzweiss-Relief und transparentes Relief. Für Karten und Gelände brauchst du Internet. Die Quellenangaben bleiben auch im Export sichtbar.
 
@@ -162,9 +172,9 @@ Der Export verwendet den markierten Bereich. Für den ganzen Film zuerst Bereich
 
 Die Desktop-App unterstützt bis 4K und 60 fps. Ein Hintergrundexport kann weiterlaufen, wenn das Editorfenster geschlossen ist. Rechner und FlightStudio-Hintergrundprozess müssen an bleiben; vollständig Beenden oder Ruhezustand unterbricht die Arbeit. Eine reine Browser-Aufzeichnung benötigt einen sichtbaren Tab und hat weniger Exportoptionen.
 
-Mit „Speicherort wählen & exportieren“ bestimmst du vor dem Rendern Dateiname und Zielordner. Abbrechen im Speicherdialog startet keinen Export. Der fertige Film wird automatisch gespeichert; „Im Ordner anzeigen“ öffnet seinen Speicherort. Eine vorhandene Datei wird erst nach erfolgreichem Rendern und Speichern ersetzt.
+Gib oben im Exportdialog einen Filmnamen ein. Ohne Namen startet der Export nicht. Der Filmname ist unabhängig vom Projektnamen. Mit „Speicherort wählen & exportieren“ wählst du danach den Zielordner; der Filmname ist als Dateiname vorgeschlagen. Abbrechen im Speicherdialog startet keinen Export. Der fertige Film wird automatisch gespeichert; „Im Ordner anzeigen“ öffnet seinen Speicherort. Eine vorhandene Datei wird erst nach erfolgreichem Rendern und Speichern ersetzt.
 
-Während des Hintergrundexports wird der Projektstand vom Exportstart verwendet. Spätere Bearbeitungen ändern diesen laufenden Export nicht. Frühere Filme findest du unter „Bisherige Exporte“; sie werden nicht automatisch als neue Vorschau eingeblendet. Bei einem Speicherfehler wählst du einen anderen Speicherort, ohne erneut zu rendern. Kartenanbieter benötigen eine Internetverbindung.
+Während des Hintergrundexports wird der Projektstand vom Exportstart verwendet. Spätere Bearbeitungen ändern diesen laufenden Export nicht. Frühere Filme findest du unter „Bisherige Exporte“; der Exportdialog zeigt nur Einstellungen, Fortschritt und Dateiverwaltung, keine Videovorschau. Bei einem Speicherfehler wählst du einen anderen Speicherort, ohne erneut zu rendern. Kartenanbieter benötigen eine Internetverbindung.
 
 Im Browser wird der Speicherort ebenfalls vor dem Start gewählt. Verwende Chrome oder Edge und lasse den Tab bis zum abgeschlossenen Speichern geöffnet. Bei einer reinen Browser-Aufzeichnung muss er sichtbar bleiben. Nach einem geschlossenen oder neu geladenen Tab lässt sich ein fertig gerenderter Film unter „Bisherige Exporte“ erneut speichern.
 

@@ -1,3 +1,4 @@
+import {prepareExportForm,readExportName,installExportForm} from './export-form.mjs';
 import { instrumentRect, instrumentReading } from '/lib/instruments.mjs';
 import { installInstruments } from './instrument-panel.mjs';
 import { DateTime } from "luxon";
@@ -6,7 +7,7 @@ import { finalizeFlight, toKML } from "/lib/flight.mjs";
 import { makeOverlay, readoutRect, flightName } from "/lib/flight-overlays.mjs";
 import { effectScene, transitionFor, applyTransition, connectOverlap, imageTransform } from '/lib/clip-effects.mjs';
 import { convertV1 } from "./migrate-v1.mjs";
-import { validateCameraFrame } from "/lib/camera.mjs";
+import { validateCameraFrame, cameraWindow, putCameraFrame, migrateCameraTiming, TOP_VIEW } from "/lib/camera.mjs";
 import {
   clamp,
   length,
@@ -19,7 +20,8 @@ import {
   editRange,
   snapTime,
   fitsTrack,
-  timedClips,
+  alignedMedia,
+  timelineTrackHeight,
   layoutRects,
   sceneLayout,
   removeTrack,
@@ -42,7 +44,7 @@ import { renderExport } from "./render-export.mjs";
 import { pixelSize } from "/lib/export-settings.mjs";
 import { installLanguageUI, getLanguage, translate as t } from "./i18n.mjs";
 import { installThemeUI } from "./theme.mjs";
-import { installAppMenu } from "./app-menu.mjs";
+import { installAppMenu, installPreviewToolbar } from "./app-menu.mjs";
 import { installTutorial } from "./tutorial.mjs";
 const renderJob = new URLSearchParams(location.search).get("renderJob");
 // Hidden native windows do not reliably receive compositor animation frames.
@@ -107,11 +109,12 @@ const fresh = () => ({
   map: {
     style: "satellite",
     opacity: 0.65,
-    camera: "follow",
+    camera: "path",
+    timing: "arrival",
     frames: [],
     initial: null,
-    heading: 0.3,
-    pitch: -0.65,
+    heading: TOP_VIEW.heading,
+    pitch: TOP_VIEW.pitch,
     range: 4000,
   },
 });
@@ -174,14 +177,15 @@ function showPanel(name) {
 const history = [],
   future = [];
 let intervals = [];
+let cameraDraft = null, timelineDrag = null;
 let compact = true;
 const viewTime = (t) =>
-    compact
+    compact && !timelineDrag
       ? outputDuration(intervals, 0, t) +
         Math.max(0, t - sequenceDuration(S.clips))
       : t,
   editTime = (t) =>
-    compact
+    compact && !timelineDrag
       ? advancePlayback(intervals, 0, t) +
         Math.max(0, t - outputDuration(intervals))
       : t;
@@ -255,7 +259,7 @@ function snapshot() {
   future.length = 0;
 }
 function project() {
-  return { ...S, playhead: app.time, viewPose: map?.pose(), uiLanguage: getLanguage() };
+  return { ...S, playhead: app.time, viewPose: cameraDraft?.savedPose ?? map?.pose(), uiLanguage: getLanguage() };
 }
 app.project = project;
 function scheduleSave() {
@@ -300,6 +304,7 @@ function undo(redo = false) {
   if (!from.length) return;
   to.push(JSON.stringify({ state: S, selected }));
   const value = JSON.parse(from.pop());
+  cameraDraft = null;
   S = value.state;
   selected = value.selected;
   app.pause();
@@ -313,10 +318,12 @@ app.pause = () => {
   engine?.pause();
 };
 app.seek = (t) => {
+  discardCameraDraft(false);
   app.pause();
   app.time = clamp(t, 0, duration());
   handleKey = "";
   app.render();
+  syncCameraControls();
 };
 app.size = (short = 720) => {
   const { width, height } = pixelSize(S.aspect, short);
@@ -361,19 +368,22 @@ function availableTrack(kind, start, len, forceNew = false) {
   }
   return track.id;
 }
+function prependSequence(seconds) {
+  if(!seconds)return;
+  for(const c of S.clips)c.start+=seconds;
+  S.map.frames=S.map.frames.map(f=>({...f,time:f.time+seconds*1000}));
+  app.time+=seconds;
+}
 function insertAsset(asset, at = null, trackId = null) {
   app.pause();
   closeSourcePreview();
   let clips = [];
   const timestamp = capture(asset);
-  if (at === null && timestamp !== null && S.flight)
-    clips = timedClips(
-      asset,
-      timestamp,
-      S.flight,
-      S.clips.filter((c) => c.kind === "flight"),
-      "",
-    );
+  if (at === null && timestamp !== null && S.flight) {
+    const placement=alignedMedia(asset,timestamp,S.flight,S.clips.filter(c=>c.kind==='flight'),'');
+    prependSequence(placement.prepend);
+    clips=placement.clips;
+  }
   if (!clips.length) {
     let start = at ?? app.time;
     if (at === null && timestamp !== null && !S.flight) {
@@ -448,10 +458,12 @@ function attachFlight(flight) {
     showStats: true,
   };
   S.clips.push(fc);
+  cameraDraft=null;
   map.load(flight);
-  S.map.initial = map.pose();
+  Object.assign(S.map,TOP_VIEW,{timing:"arrival"});
+  S.map.initial = map.initial;
   S.map.frames = [];
-  S.map.camera = "follow";
+  S.map.camera = "path";
   const autoIds = new Set(
     S.clips.filter((c) => c.auto && c.kind !== "flight").map((c) => c.assetId),
   );
@@ -546,6 +558,7 @@ function flightThumbnail(flight, color) {
 let renderedMapTime = null;
 app.render = () => {
   if (!map) return false;
+  if(cameraDraft && Math.abs(cameraDraft.time-app.time)>=1e-7)discardCameraDraft(false);
   Object.assign(app, effectScene(S.clips, S.tracks, app.time, S.layout));
   const fc = app.layers.find((c) => c.kind === "flight");
   let waiting = false;
@@ -556,11 +569,14 @@ app.render = () => {
     map.heading = S.map.heading;
     map.pitch = S.map.pitch;
     map.range = S.map.range;
+    const draft=cameraDraft&&Math.abs(cameraDraft.time-app.time)<1e-7?cameraDraft:null;
+    if(draft)map.apply(draft.pose);
     map.update(
       S.flight.start + sourceTime(fc, app.time) * 1000,
       outputDuration(intervals, 0, app.time),
       {
         ...clipMapSettings(S.map, fc),
+        ...(draft?{camera:"fixed"}:{}),
         frames: S.map.frames.map((f) => ({
           ...f,
           time: outputDuration(intervals, 0, f.time / 1000) * 1000,
@@ -754,6 +770,19 @@ function clipEffectsDrag(event, clip, kind) {
   const done = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', done); document.removeEventListener('pointercancel', done); dragging = false; changed(); };
   document.addEventListener('pointermove', move); document.addEventListener('pointerup', done); document.addEventListener('pointercancel', done);
 }
+function fitTrackHeights() {
+  const scroll=$('timeline-scroll'),height=timelineTrackHeight(scroll.clientHeight-$('ruler').offsetHeight,S.tracks.length);
+  document.querySelector('.timeline-body').style.setProperty('--lane-height',height+'px');
+  document.querySelector('.timeline-body').classList.toggle('compact-tracks',height<44);
+}
+function beginTimelineDrag(pointerTime,clientX) {
+  if(!S.gaps.enabled)return;
+  const scroll=$('timeline-scroll'),anchor=clientX-scroll.getBoundingClientRect().left;
+  timelineDrag={px};renderTimeline();
+  scroll.scrollLeft=Math.max(0,pointerTime*px-anchor);
+  $('gap-description').textContent=t('Automatik beim Verschieben pausiert');
+  $('gap-auto').disabled=true;
+}
 function renderTimeline() {
   const scroll = $("timeline-scroll"),
     span = Math.max(
@@ -761,9 +790,10 @@ function renderTimeline() {
       viewTime(duration()) + Math.min(5, viewTime(duration()) * 0.03),
     ),
     base = Math.max(0.02, (scroll.clientWidth - 25) / span);
-  px = base * 2 ** zoom;
+  px = timelineDrag?.px ?? base * 2 ** zoom;
   const width = Math.max(scroll.clientWidth, span * px);
   $("timeline-content").style.width = width + "px";
+  fitTrackHeights();
   renderRuler();
   $("lanes").replaceChildren();
   $("track-labels").replaceChildren();
@@ -907,7 +937,7 @@ function renderTimeline() {
     for (const s of intervals) {
       const a = Math.max(s.start, c.start),
         b = Math.min(s.end, end(c));
-      if (s.rate <= 1 || b <= a) continue;
+      if (timelineDrag || s.rate <= 1 || b <= a) continue;
       const band = document.createElement("div");
       band.className = "auto-gap";
       band.style.left = (viewTime(a) - viewTime(c.start)) * px + "px";
@@ -932,21 +962,21 @@ function clipDrag(e, c) {
       : null,
     originals = editableChosen().map((x) => ({ ...x })),
     x = e.clientX,
-    scrollStart = $("timeline-scroll").scrollLeft,
+    originalScroll = $("timeline-scroll").scrollLeft,
     originalPointer =
       (e.clientX - $("timeline-content").getBoundingClientRect().left) / px;
-  let moved = false;
-  snapshot();
+  const pointerTime=editTime(originalPointer),grabOffset=pointerTime-c.start;
+  let moved=false,scrollStart=originalScroll,lastX=x;
   dragging = true;
   const move = (event) => {
-    let delta =
-      editTime(
-        originalPointer +
-          (event.clientX - x + $("timeline-scroll").scrollLeft - scrollStart) /
-            px,
-      ) - editTime(originalPointer);
-    if (Math.abs(event.clientX - x) > 2) moved = true;
-    if (!moved) return;
+    lastX=event.clientX;
+    if(!moved){
+      if(Math.abs(event.clientX-x)<=2&&Math.abs(event.clientY-e.clientY)<=2)return;
+      snapshot();beginTimelineDrag(pointerTime,x);scrollStart=$('timeline-scroll').scrollLeft;moved=true;
+    }
+    let delta=timelineDrag
+      ? (event.clientX-x+$('timeline-scroll').scrollLeft-scrollStart)/px
+      : editTime(originalPointer+(event.clientX-x+$('timeline-scroll').scrollLeft-scrollStart)/px)-editTime(originalPointer);
     if (side) {
       const old = originals.find((v) => v.id === c.id);
       if (!old) return;
@@ -1021,25 +1051,27 @@ function clipDrag(e, c) {
     }
     const sc = $("timeline-scroll"),
       r = sc.getBoundingClientRect();
+    $('timeline-content').style.width=Math.max(sc.clientWidth,viewTime(sequenceDuration(S.clips))*px+sc.clientWidth*.2)+'px';
+    if (event.clientY > r.bottom-24) sc.scrollTop+=8;
+    if (event.clientY < r.top+40) sc.scrollTop-=8;
     if (event.clientX > r.right - 30) sc.scrollLeft += 12;
     if (event.clientX < r.left + 30) sc.scrollLeft -= 12;
   };
-  const finish = () => {
-    document.removeEventListener("pointermove", move);
-    document.removeEventListener("pointerup", finish);
-    document.removeEventListener("pointercancel", finish);
-    dragging = false;
-    if (moved && !side && originals.length === 1) Object.assign(c, connectOverlap(S.clips, c));
-    if (!moved) {
-      history.pop();
-      app.seek(c.start);
-    }
+  const finish = (event) => {
+    document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',finish);document.removeEventListener('pointercancel',finish);window.removeEventListener('blur',finish);
+    dragging=false;
+    const cancelled=event?.type==='pointercancel'||event?.type==='blur';
+    if(cancelled&&moved){for(const original of originals)Object.assign(S.clips.find(c=>c.id===original.id),original);history.pop();}
+    if(moved&&!cancelled&&!side&&originals.length===1)Object.assign(c,connectOverlap(S.clips,c));
+    const wasExpanded=Boolean(timelineDrag);timelineDrag=null;$('gap-auto').disabled=false;
     changed();
+    if(wasExpanded){const scroll=$('timeline-scroll'),anchor=clamp(lastX-scroll.getBoundingClientRect().left,0,scroll.clientWidth);
+      const time=side==='left'?c.start:side==='right'?end(c):c.start+grabOffset;
+      scroll.scrollLeft=Math.max(0,viewTime(time)*px-anchor);renderRuler();}
   };
-  document.addEventListener("pointermove", move);
-  document.addEventListener("pointerup", finish);
-  document.addEventListener("pointercancel", finish);
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',finish);document.addEventListener('pointercancel',finish);window.addEventListener('blur',finish);
 }
+
 function renderRange() {
   if (document.activeElement !== $("range-start"))
     $("range-start").value = viewTime(app.range[0]).toFixed(2);
@@ -1158,7 +1190,8 @@ function windowDrag(e, c) {
   e.preventDefault();
   app.pause();
   choose(c.id, false, false);
-  snapshot();
+  if(!cameraDrag)snapshot();
+  const savedPose=map.pose();
   dragging = true;
   const initial = { ...app.rects.get(c.id) },
     bounds = $("stage").getBoundingClientRect(),
@@ -1171,16 +1204,14 @@ function windowDrag(e, c) {
     pan = e.button === 1 || e.button === 2 || e.shiftKey,
     follow = S.map.camera === "follow" && !pan;
   if (gesture && follow) Object.assign(gesture, { heading: S.map.heading, pitch: S.map.pitch, range: S.map.range });
+  let cameraMoved=false;
   const move = (event) => {
     const dx = (event.clientX - x) / bounds.width,
       dy = (event.clientY - y) / bounds.height;
     if (cameraDrag) {
       map.moveGesture(gesture, dx / initial.w, dy / initial.h, pan);
-      S.map.heading = map.heading;
-      S.map.pitch = map.pitch;
-      S.map.range = map.range;
-      S.map.camera = follow ? "follow" : "fixed";
-      S.viewPose = map.pose();
+      cameraMoved=true;
+      previewCameraView(savedPose);
     } else if (imagePan) {
       c.imageTransform = imageTransform({ ...imageStart, x: imageStart.x + dx / initial.w, y: imageStart.y + dy / initial.h });
     } else
@@ -1195,7 +1226,8 @@ function windowDrag(e, c) {
     document.removeEventListener("pointerup", finish);
     document.removeEventListener("pointercancel", finish);
     dragging = false;
-    changed();
+    if(cameraMoved)syncCameraControls();
+    else if(!cameraDrag)changed();
   };
   document.addEventListener("pointermove", move);
   document.addEventListener("pointerup", finish);
@@ -1359,19 +1391,21 @@ function resync(c) {
     throw new Error(
       "Bitte eine Flugspur und einen gültigen Aufnahmebeginn angeben.",
     );
-  const pieces = timedClips(
+  const placement = alignedMedia(
     { ...a, duration: c.out - c.in },
     stamp + c.in * 1000,
     S.flight,
     S.clips.filter((f) => f.kind === "flight"),
     c.trackId,
   );
+  const pieces=placement.clips;
   if (!pieces.length)
     throw new Error(
       "Diese Aufnahmezeit liegt ausserhalb der vorhandenen Flugabschnitte.",
     );
   snapshot();
   S.clips = S.clips.filter((v) => v.id !== c.id);
+  prependSequence(placement.prepend);
   for (const p of pieces)
     S.clips.push({
       ...c,
@@ -1386,24 +1420,50 @@ function resync(c) {
   app.time = pieces[0].start;
   changed();
 }
+function cameraOutputFrames(){return S.map.frames.map(f=>({...f,time:outputDuration(intervals,0,f.time/1000)*1000}));}
+function cameraDraftControls(){
+  $("camera-draft").hidden=!cameraDraft;
+  $("camera-discard").hidden=!cameraDraft;
+}
+function previewCameraView(savedPose){
+  cameraDraft={time:app.time,pose:map.pose(),savedPose:cameraDraft?.savedPose??savedPose};
+  cameraDraftControls();
+  syncCameraControls();
+}
+function discardCameraDraft(render=true){
+  if(!cameraDraft)return;
+  const savedPose=cameraDraft.savedPose;
+  cameraDraft=null;
+  if(savedPose)map.apply(savedPose);
+  cameraDraftControls();
+  if(render){app.render();syncCameraControls();}
+}
+function syncCameraControls(){
+  if(!S.flight)return;
+  const pose=map.pose(),gesture=map.gesture();
+  $('camera-heading').value=((pose.heading*180/Math.PI)%360+360)%360;
+  $('camera-pitch').value=-pose.pitch*180/Math.PI;
+  $('camera-range').value=gesture?.range||S.map.range;cameraLabels();
+}
+function commitCameraView(record=true){
+  if(!S.flight)throw new Error('Bitte zuerst eine Flugspur verbinden.');
+  const time=cameraDraft?.time??app.time,pose=cameraDraft?.pose??map.pose();
+  const frame={time:time*1000,duration:time===0?0:Number($('camera-duration').value),pose};
+  validateCameraFrame({...frame,time:outputDuration(intervals,0,time)*1000},[],{start:0,end:outputDuration(intervals)*1000});
+  if(record)snapshot();
+  Object.assign(S.map,{heading:pose.heading,pitch:pose.pitch,range:map.gesture()?.range||S.map.range});
+  S.map.frames=putCameraFrame(S.map.frames,frame);S.map.camera='path';S.map.timing='arrival';cameraDraft=null;cameraDraftControls();changed();
+}
 function renderCameras() {
-  const list = $("camera-list");
-  list.replaceChildren();
-  S.map.frames.forEach((f, i) => {
-    const el = document.createElement("div");
-    el.className = "camera-point";
-    el.innerHTML = `<button>${i + 1}. ${format(viewTime(f.time / 1000))} · ${f.duration}s</button><button aria-label="Kamerapunkt entfernen">×</button>`;
-    el.children[0].onclick = () => {
-      S.map.camera = "path";
-      app.seek(advancePlayback(intervals, f.time / 1000, f.duration));
-      refresh();
-    };
-    el.children[1].onclick = () => {
-      snapshot();
-      S.map.frames.splice(i, 1);
-      changed();
-    };
-    list.append(el);
+  cameraDraftControls();
+  const list=$('camera-list'),frames=cameraOutputFrames();list.replaceChildren();
+  S.map.frames.forEach((f,i)=>{
+    const window=cameraWindow(frames[i],frames),el=document.createElement('div');el.className='camera-point';
+    el.innerHTML='<button></button><button aria-label="Kamerapunkt entfernen">×</button>';
+    el.children[0].textContent=(i+1)+'. '+format(viewTime(f.time/1000))+' · '+t('Ankunft');
+    el.children[0].title=t('Übergang')+': '+format(window.start/1000)+' → '+format(window.end/1000)+' ('+((window.end-window.start)/1000).toFixed(1)+' s)';
+    el.children[0].onclick=()=>{S.map.camera='path';$('camera-duration').value=f.duration;app.seek(f.time/1000);refresh();};
+    el.children[1].onclick=()=>{snapshot();S.map.frames.splice(i,1);cameraDraft=null;changed();};list.append(el);
   });
 }
 function refresh() {
@@ -1436,6 +1496,7 @@ function refresh() {
   app.render();
   renderInspector();
   renderCameras();
+  syncCameraControls();
   renderSelection();
   fitStage();
 }
@@ -1455,6 +1516,7 @@ function download(content, name, type = "application/json") {
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 async function restore(data) {
+  cameraDraft=null;
   app.pause();
   const assets = await app.api("/api/media");
   if (data.version === 1) data = convertV1(data, assets, fresh);
@@ -1490,6 +1552,13 @@ async function restore(data) {
   S.gaps = { ...fresh().gaps, ...data.gaps };
   if (!data.gaps?.explicit) S.gaps.enabled = false;
   S.gaps.explicit = true;
+  const cameraIntervals=playbackIntervals(S);
+  S.map=migrateCameraTiming({...S.map,timing:data.map?.timing},t=>outputDuration(cameraIntervals,0,t/1000)*1000,t=>advancePlayback(cameraIntervals,0,t/1000)*1000);
+  if(!S.map.frames.length){
+    if(data.map?.timing!=='arrival'&&data.map?.camera==='fixed'&&data.viewPose)S.map.frames=[{time:0,duration:0,pose:data.viewPose}];
+    else Object.assign(S.map,TOP_VIEW);
+    S.map.camera='path';
+  }
   app.time = Number(data.playhead) || 0;
   history.length = 0;
   future.length = 0;
@@ -1503,6 +1572,7 @@ async function restore(data) {
       showNameTag: S.flight.showNameTag,
     });
     map.load(S.flight);
+    S.map.initial=map.initial;
   }
   S.flightOverlays = (data.flightOverlays || []).map((o) => ({
     ...o,
@@ -1658,6 +1728,7 @@ function wire() {
     }
     if (!duration()) return;
     closeSourcePreview();
+    discardCameraDraft();
     await engine.enableAudio();
     if (app.time >= duration()) app.time = 0;
     app.playing = true;
@@ -1789,7 +1860,6 @@ function wire() {
     clip.imageTransform = imageTransform({ ...transform, zoom: transform.zoom * Math.exp(-clamp(e.deltaY * (e.deltaMode === 1 ? 16 : 1), -300, 300) * .0015) });
     imageWheelTimer = setTimeout(() => { imageWheelTimer = null; changed(); }, 180);
   }, { passive: false });
-  let wheelTimer;
   $("stage").addEventListener(
     "wheel",
     (e) => {
@@ -1798,20 +1868,10 @@ function wire() {
       if (arrange || !clip || trackFor(clip)?.locked) return;
       e.preventDefault();
       app.pause();
-      if (!wheelTimer) snapshot();
-      clearTimeout(wheelTimer);
+      const savedPose=map.pose();
       const factor = Math.exp(clamp(e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 300 : 1), -500, 500) * .001);
-      if (S.map.camera === "follow") {
-        S.map.range = clamp(S.map.range * factor, 100, 200000);
-      } else {
-        map.moveGesture(map.gesture(), 0, 0, false, factor);
-        S.map.camera = "fixed";
-        S.map.heading = map.heading;
-        S.map.pitch = map.pitch;
-        S.map.range = map.range;
-        S.viewPose = map.pose();
-      }
-      wheelTimer = setTimeout(() => { wheelTimer = null; changed(); }, 180);
+      map.moveGesture(map.gesture(),0,0,false,factor);
+      previewCameraView(savedPose);
     },
     { passive: false },
   );
@@ -1825,67 +1885,38 @@ function wire() {
   };
   $("relief-opacity").onchange = changed;
   $("camera-mode").onchange = (e) => {
+    discardCameraDraft();
     snapshot();
     S.map.camera = e.target.value;
     changed();
   };
   $("frame-flight").onclick = () => {
     if (!S.flight) return;
-    snapshot();
+    app.pause();
+    const savedPose=map.pose();
     map.frame();
-    S.map.camera = "fixed";
-    changed();
+    previewCameraView(savedPose);
   };
   for (const id of ["camera-heading", "camera-pitch", "camera-range"]) {
     $(id).oninput = () => {
+      if(!S.flight)return;
       app.pause();
-      S.map.heading = (Number($("camera-heading").value) * Math.PI) / 180;
-      S.map.pitch = (-Number($("camera-pitch").value) * Math.PI) / 180;
-      S.map.range = Number($("camera-range").value);
-      map.heading = S.map.heading;
-      map.pitch = S.map.pitch;
-      map.range = S.map.range;
+      const savedPose=map.pose();
+      map.heading = (Number($("camera-heading").value) * Math.PI) / 180;
+      map.pitch = (-Number($("camera-pitch").value) * Math.PI) / 180;
+      map.range = Number($("camera-range").value);
       map.orbit();
-      if (S.map.camera !== "follow") S.map.camera = "fixed";
-      cameraLabels();
+      previewCameraView(savedPose);
     };
-    $(id).onchange = changed;
+    $(id).onchange = cameraDraftControls;
   }
   for (const id of [
-    "camera-heading",
-    "camera-pitch",
-    "camera-range",
     "relief-opacity",
     "background",
   ])
     $(id).addEventListener("pointerdown", snapshot);
-  $("camera-add").onclick = safe(() => {
-    if (!S.flight) throw new Error("Bitte zuerst eine Flugspur verbinden.");
-    const pose = map.pose();
-    snapshot();
-    if (!S.map.frames.length) {
-      S.map.initial = pose;
-      S.map.frames.push({ time: 0, duration: 0, pose });
-    } else {
-      const frame = {
-        time: app.time * 1000,
-        duration: Number($("camera-duration").value),
-        pose,
-      };
-      validateCameraFrame(
-        { ...frame, time: outputDuration(intervals, 0, app.time) * 1000 },
-        S.map.frames.map((f) => ({
-          ...f,
-          time: outputDuration(intervals, 0, f.time / 1000) * 1000,
-        })),
-        { start: 0, end: outputDuration(intervals) * 1000 },
-      );
-      S.map.frames.push(frame);
-      S.map.frames.sort((a, b) => a.time - b.time);
-    }
-    S.map.camera = "path";
-    changed();
-  });
+  $("camera-add").onclick = safe(()=>commitCameraView());
+  $("camera-discard").onclick = ()=>discardCameraDraft();
   $("gap-auto").onchange = (e) => {
     snapshot();
     S.gaps.enabled = e.target.checked;
@@ -1926,6 +1957,7 @@ function wire() {
   $("new-project").onclick = () => {
     snapshot();
     app.pause();
+    cameraDraft = null;
     S = fresh();
     selected = [];
     selectedAsset = null;
@@ -1957,8 +1989,12 @@ function wire() {
     app.pause();
     $("export-summary").textContent =
       `${format(viewTime(app.range[0]))} – ${format(viewTime(app.range[1]))} · Film ca. ${format(app.outputLength(...app.range))} · ${S.aspect} · ${S.tracks.length} Spuren`;
+    discardCameraDraft();
     exporter.open();
+    prepareExportForm($("project-name").value);
     $("export-dialog").showModal();
+    $("export-name").focus();
+    $("export-name").select();
     updateExportSpecs();
     if (exporter.background)
       void exporter.refresh().catch((e) => app.toast(e.message, true));
@@ -1974,23 +2010,24 @@ function wire() {
     $(id).onchange = updateExportSpecs;
   $("export-close").onclick = () => {
     if (!exporter.active) {
-      $("export-result").pause();
       $("export-dialog").close();
     }
   };
   $("export-dialog").addEventListener("cancel", (e) => {
     if (exporter.active) e.preventDefault();
   });
+  installExportForm();
   $("export-start").onclick = safe(async () => {
+    const name=readExportName();
+    if(!name)return;
+    $("export-settings").disabled=true;
     $("export-start").disabled = true;
     $("export-close").disabled = true;
     $("export-cancel").hidden = false;
-    $("export-download").hidden = true;
-    $("export-result").pause();
-    $("export-result").hidden = true;
     $("export-progress").hidden = false;
     try {
       const started = await exporter.start({
+        name,
         format: $("export-format").value,
         size: Number($("export-size").value),
         fps: Number($("export-fps").value),
@@ -1998,8 +2035,9 @@ function wire() {
         acceleration: $("export-acceleration").value,
         audio: $("export-audio").checked,
       });
-      if(started === false){$('export-start').disabled=false;$('export-close').disabled=false;$('export-cancel').hidden=true;}
+      if(started === false){$('export-settings').disabled=false;$('export-start').disabled=false;$('export-close').disabled=false;$('export-cancel').hidden=true;}
     } catch (e) {
+      $("export-settings").disabled = false;
       $("export-start").disabled = false;
       $("export-close").disabled = false;
       $("export-cancel").hidden = true;
@@ -2108,6 +2146,7 @@ function wire() {
     fitStage();
     if (!dragging) renderTimeline();
   }).observe(document.querySelector(".viewer"));
+  new ResizeObserver(fitTrackHeights).observe($("timeline-scroll"));
 }
 function tick(now) {
   if (now - last < 32) {
@@ -2234,6 +2273,7 @@ async function init() {
       for (const [el, open] of ui.details) if (el.isConnected) el.open = open;
     },
   });
+  installPreviewToolbar();
   installAppMenu({ canRun: () => !app.exporting && !dragging && !tutorial?.active });
   app.size();
   busy(false);
